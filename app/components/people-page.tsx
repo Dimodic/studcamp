@@ -6,6 +6,7 @@ import { useAppData } from "../lib/app-data";
 import type { AdminUser, Person, UserRole } from "../lib/domain";
 import { ROLE_LABELS, ROLE_STYLES } from "../lib/options";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 const ROLE_ORDER: Record<UserRole, number> = {
   organizer: 0,
@@ -139,6 +140,7 @@ export function PeoplePage() {
     entity?: unknown;
     defaults?: Record<string, unknown>;
   } | null>(null);
+  useBodyScrollLock(Boolean(selectedPerson));
 
   const selectedDocs = useMemo(
     () =>
@@ -158,6 +160,17 @@ export function PeoplePage() {
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get("admin") === "create-user" && data.currentUser.capabilities.canManageUsers) {
       setAdminState({ kind: "user", mode: "create" });
+      navigate("/people", { replace: true });
+    }
+    const userId = searchParams.get("user");
+    if (userId) {
+      const target =
+        (data.currentUser.capabilities.canManageUsers ? data.adminUsers : data.people).find(
+          (person) => person.id === userId,
+        ) ?? data.people.find((person) => person.id === userId);
+      if (target) {
+        setSelectedPerson(target);
+      }
       navigate("/people", { replace: true });
     }
   }, [data, location.search, navigate]);

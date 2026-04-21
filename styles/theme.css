@@ -148,6 +148,23 @@
     cursor: not-allowed;
   }
 
+  /* Запрет случайного выделения текста внутри кликабельных
+     контейнеров при double-click. Инпуты остаются выделяемыми. */
+  button,
+  a,
+  label,
+  summary,
+  [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
   /* ── Инпуты ──
      Чёткий focus-state без «прыжка» border-радиуса. */
   input,

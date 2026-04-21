@@ -187,4 +187,48 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+  parseAttendancePhoto(
+    token: string,
+    payload: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      eventId: string;
+      photos: Array<{ name: string; mimeType: string; base64: string }>;
+    },
+  ) {
+    return request<{
+      matched: Array<{ userId: string; name: string; signed: boolean }>;
+      unmatched: string[];
+    }>(`/admin/attendance/parse`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+  markAttendance(token: string, eventId: string, userIds: string[]) {
+    return request<{ ok: boolean; marked: number }>(`/admin/attendance/mark`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ eventId, userIds }),
+    });
+  },
+  setEntityVisibility(
+    token: string,
+    resource: AdminResourcePath,
+    entityId: string,
+    hidden: boolean,
+  ) {
+    return request<{ ok: boolean }>(`/admin/visibility/${resource}/${entityId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ hidden }),
+    });
+  },
 };

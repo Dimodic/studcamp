@@ -79,40 +79,32 @@ export function ProjectForm({ state, onChange }: ProjectFormProps) {
         <TextField label="Макс. команда" type="number" value={state.maxTeam} onChange={(value) => onChange({ ...state, maxTeam: value })} />
       </div>
 
-      <div
-        className="rounded-[var(--radius-md)] border p-4 space-y-3"
-        style={{ borderColor: "var(--line-subtle)" }}
-      >
-        <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--text-tertiary)" }}>
-          Ментор
-        </p>
-        <TextField label="Имя ментора" value={state.mentorName} onChange={(value) => onChange({ ...state, mentorName: value })} />
+      <TextField label="Имя ментора" value={state.mentorName} onChange={(value) => onChange({ ...state, mentorName: value })} />
+      <TextField
+        label="Должность и компания"
+        value={state.mentorPosition}
+        onChange={(value) => onChange({ ...state, mentorPosition: value })}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Город ментора" value={state.mentorCity} onChange={(value) => onChange({ ...state, mentorCity: value })} />
         <TextField
-          label="Должность и компания"
-          value={state.mentorPosition}
-          onChange={(value) => onChange({ ...state, mentorPosition: value })}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <TextField label="Город" value={state.mentorCity} onChange={(value) => onChange({ ...state, mentorCity: value })} />
-          <TextField
-            label="Telegram"
-            value={state.mentorTelegram}
-            onChange={(value) => onChange({ ...state, mentorTelegram: value })}
-            placeholder="@username"
-          />
-        </div>
-        <TextField
-          label="Формат работы"
-          value={state.mentorWorkFormat}
-          onChange={(value) => onChange({ ...state, mentorWorkFormat: value })}
-          placeholder="очные встречи / созвоны / чат"
-        />
-        <TextField
-          label="Фото (URL)"
-          value={state.mentorPhoto}
-          onChange={(value) => onChange({ ...state, mentorPhoto: value })}
+          label="Telegram ментора"
+          value={state.mentorTelegram}
+          onChange={(value) => onChange({ ...state, mentorTelegram: value })}
+          placeholder="@username"
         />
       </div>
+      <TextField
+        label="Формат работы ментора"
+        value={state.mentorWorkFormat}
+        onChange={(value) => onChange({ ...state, mentorWorkFormat: value })}
+        placeholder="очные встречи / созвоны / чат"
+      />
+      <TextField
+        label="Фото ментора (URL)"
+        value={state.mentorPhoto}
+        onChange={(value) => onChange({ ...state, mentorPhoto: value })}
+      />
     </>
   );
 }

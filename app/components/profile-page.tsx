@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import {
   Bell,
   Building2,
+  CheckCircle2,
   ChevronRight,
   CreditCard,
   FileText,
@@ -165,6 +166,20 @@ export function ProfilePage() {
                   >
                     {ROLE_LABELS[currentUser.role] ?? currentUser.role}
                   </span>
+                  {currentUser.attendance && currentUser.attendance.total > 0 && (
+                    <span
+                      className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)] inline-flex items-center gap-1.5"
+                      style={{
+                        background: currentUser.attendance.closed ? "var(--success-soft)" : "var(--bg-subtle)",
+                        color: currentUser.attendance.closed ? "var(--success)" : "var(--text-secondary)",
+                        fontWeight: 500,
+                      }}
+                      title={`${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`}
+                    >
+                      {currentUser.attendance.closed && <CheckCircle2 size={13} />}
+                      {currentUser.attendance.percentage}%{currentUser.attendance.closed && " · закрыта"}
+                    </span>
+                  )}
                   {currentUser.email && (
                     <span className="text-[12.5px]" style={{ color: "var(--text-tertiary)" }}>
                       {currentUser.email}

@@ -1,6 +1,20 @@
 from fastapi import APIRouter
 
-from . import camp, campus, documents, events, materials, projects, resources, rooms, stories, updates, users
+from . import (
+    attendance,
+    camp,
+    campus,
+    documents,
+    events,
+    materials,
+    projects,
+    resources,
+    rooms,
+    stories,
+    updates,
+    users,
+    visibility,
+)
 
 
 router = APIRouter()
@@ -15,5 +29,7 @@ router.include_router(campus.router)
 router.include_router(rooms.router)
 router.include_router(documents.router)
 router.include_router(camp.router)
+router.include_router(attendance.router)
+router.include_router(visibility.router)
 
 __all__ = ["router"]

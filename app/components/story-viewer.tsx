@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import type { Story } from "../lib/domain";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 interface StoryViewerProps {
   stories: Story[];
@@ -13,6 +14,7 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
   const [storyIdx, setStoryIdx] = useState(startIndex);
   const [slideIdx, setSlideIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  useBodyScrollLock(true);
 
   const story = stories[storyIdx];
   const slide = story?.slides[slideIdx];

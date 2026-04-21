@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 
 const INPUT_CLASSNAME = "w-full border rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] outline-none";
 const INPUT_STYLE = {
@@ -107,7 +107,7 @@ export function ToggleField({ label, checked, onChange }: ToggleFieldProps) {
 }
 
 interface ActionIconButtonProps {
-  kind: "plus" | "edit" | "delete";
+  kind: "plus" | "edit" | "delete" | "hide" | "show";
   label: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   className?: string;
@@ -117,14 +117,22 @@ const ACTION_ICONS = {
   plus: Plus,
   edit: Pencil,
   delete: Trash2,
+  // "hide" — элемент сейчас виден, клик скроет его (открытый глаз).
+  hide: Eye,
+  // "show" — элемент уже скрыт, клик откроет (зачёркнутый глаз).
+  show: EyeOff,
 } as const;
 
 export function ActionIconButton({ kind, label, onClick, className = "" }: ActionIconButtonProps) {
   const Icon = ACTION_ICONS[kind];
   const isDanger = kind === "delete";
+  const isMuted = kind === "show";
   const hoverClasses = isDanger
-    ? "hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] hover:border-[var(--danger)]"
+    ? "hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] hover:border-[var(--danger-soft)]"
     : "hover:bg-[var(--bg-subtle)] hover:border-[var(--line-strong)] hover:text-[var(--text-primary)]";
+  const mutedStyle = isMuted
+    ? { background: "var(--bg-subtle)", borderColor: "var(--line-subtle)", color: "var(--text-tertiary)" }
+    : undefined;
   return (
     <button
       type="button"
@@ -132,6 +140,7 @@ export function ActionIconButton({ kind, label, onClick, className = "" }: Actio
       title={label}
       onClick={onClick}
       className={`w-7 h-7 rounded-full flex items-center justify-center border shrink-0 bg-[var(--bg-card)] border-[var(--line-subtle)] text-[var(--text-secondary)] transition-[background-color,color,border-color,transform] duration-150 ${hoverClasses} ${className}`}
+      style={mutedStyle}
     >
       <Icon size={14} />
     </button>

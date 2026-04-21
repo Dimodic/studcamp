@@ -24,6 +24,8 @@ import { useAppData } from "../lib/app-data";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
 import type { Event } from "../lib/domain";
 import { splitEventTitle } from "../lib/events";
+import { AttendanceUploader } from "./schedule/AttendanceUploader";
+import { ClipboardCheck } from "lucide-react";
 import { MATERIAL_TYPE_LABELS } from "../lib/options";
 
 const MATERIAL_TYPE_ACCENT: Record<string, string> = {
@@ -151,11 +153,26 @@ function groupEventsByDay(events: Event[]): EventGroup[] {
     .map((group) => ({ ...group, theme: extractDayTheme(group.events) }));
 }
 
+const SCHEDULE_SCROLL_KEY = "studcamp.schedule.scroll";
+
+function findScrollContainer(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  return document.querySelector("main") as HTMLElement | null;
+}
+
 export function SchedulePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, checkInEvent, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const {
+    data,
+    checkInEvent,
+    createAdminEntity,
+    updateAdminEntity,
+    deleteAdminEntity,
+    setEntityVisibility,
+  } = useAppData();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [attendanceEventId, setAttendanceEventId] = useState<string | null>(null);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
     mode: "create" | "edit";
@@ -196,14 +213,31 @@ export function SchedulePage() {
     if (!data || didInitialScroll.current || groups.length === 0) {
       return;
     }
+    didInitialScroll.current = true;
+
+    const scrollContainer = findScrollContainer();
+    const savedScroll = sessionStorage.getItem(SCHEDULE_SCROLL_KEY);
+
+    if (savedScroll !== null && scrollContainer) {
+      scrollContainer.scrollTop = Number(savedScroll);
+      return;
+    }
+
     const today = data.ui.currentDay;
     const target = groups.find((group) => group.day === today) ?? groups[0];
     const node = dayRefs.current.get(target.day);
-    if (node) {
-      node.scrollIntoView({ block: "start" });
-      didInitialScroll.current = true;
-    }
+    node?.scrollIntoView({ block: "start" });
   }, [data, groups]);
+
+  useEffect(() => {
+    const scrollContainer = findScrollContainer();
+    if (!scrollContainer) return;
+    const handle = () => {
+      sessionStorage.setItem(SCHEDULE_SCROLL_KEY, String(scrollContainer.scrollTop));
+    };
+    scrollContainer.addEventListener("scroll", handle, { passive: true });
+    return () => scrollContainer.removeEventListener("scroll", handle);
+  }, [data]);
 
   if (!data) {
     return null;
@@ -229,16 +263,30 @@ export function SchedulePage() {
                 <CalendarDays size={14} /> День {ui.currentDay} из {ui.totalDays}
               </p>
             </div>
-            {currentUser.capabilities.canCreateEvents && (
-              <ActionIconButton
-                kind="plus"
-                label="Создать занятие"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setAdminState({ kind: "event", mode: "create" });
-                }}
-              />
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {currentUser.capabilities.canManageAll && (
+                <button
+                  type="button"
+                  onClick={() => setAttendanceEventId(data.events[0]?.id ?? "")}
+                  aria-label="Отметить посещаемость"
+                  title="Отметить посещаемость по фото"
+                  className="h-9 px-3 text-[13px] rounded-[var(--radius-md)] border flex items-center gap-1.5 transition-colors hover:bg-[var(--bg-subtle)]"
+                  style={{ borderColor: "var(--line-subtle)", color: "var(--text-secondary)" }}
+                >
+                  <ClipboardCheck size={15} /> Листок
+                </button>
+              )}
+              {currentUser.capabilities.canCreateEvents && (
+                <ActionIconButton
+                  kind="plus"
+                  label="Создать занятие"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setAdminState({ kind: "event", mode: "create" });
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -286,14 +334,19 @@ export function SchedulePage() {
                         </span>
                         <div className="flex-1 h-px" style={{ background: "var(--line-subtle)" }} />
                       </div>
-                      {group.theme && (
-                        <p
-                          className="text-[15px] mt-1.5"
-                          style={{ color: "var(--text-primary)", fontWeight: 600 }}
-                        >
-                          {group.theme}
-                        </p>
-                      )}
+                      {(() => {
+                        const dayTitle = data.camp.dayTitles?.[String(group.day)];
+                        const label = dayTitle ?? group.theme;
+                        if (!label) return null;
+                        return (
+                          <p
+                            className="text-[15px] mt-1.5"
+                            style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                          >
+                            {label}
+                          </p>
+                        );
+                      })()}
                     </div>
 
                     <div className="relative">
@@ -334,7 +387,7 @@ export function SchedulePage() {
                               />
                               <SurfaceCard
                                 onClick={() => setExpanded(isExpanded ? null : event.id)}
-                                className={`p-4 ${event.status === "cancelled" ? "opacity-50" : ""}`}
+                                className={`p-4 ${event.status === "cancelled" || event.isHidden ? "opacity-50" : ""}`}
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -352,12 +405,26 @@ export function SchedulePage() {
                                   </div>
                                   <div className="flex items-center gap-2 flex-wrap justify-end">
                                     {teacher && (
-                                      <span
-                                        className="text-[12px] px-2.5 py-1 rounded-full"
-                                        style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
-                                      >
-                                        {teacher}
-                                      </span>
+                                      event.teacherIds[0] ? (
+                                        <button
+                                          type="button"
+                                          onClick={(clickEvent) => {
+                                            clickEvent.stopPropagation();
+                                            navigate(`/people?user=${event.teacherIds[0]}`);
+                                          }}
+                                          className="text-[12px] px-2.5 py-1 rounded-full transition-colors hover:bg-[var(--line-subtle)]"
+                                          style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
+                                        >
+                                          {teacher}
+                                        </button>
+                                      ) : (
+                                        <span
+                                          className="text-[12px] px-2.5 py-1 rounded-full"
+                                          style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
+                                        >
+                                          {teacher}
+                                        </span>
+                                      )
                                     )}
                                     {event.status === "in_progress" && (
                                       <span
@@ -396,6 +463,17 @@ export function SchedulePage() {
                                             setAdminState({ kind: "event", mode: "edit", entity: event });
                                           }}
                                         />
+                                        {currentUser.capabilities.canManageAll && (
+                                          <ActionIconButton
+                                            kind={event.isHidden ? "show" : "hide"}
+                                            label={event.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                                            onClick={(clickEvent) => {
+                                              clickEvent.preventDefault();
+                                              clickEvent.stopPropagation();
+                                              void setEntityVisibility("events", event.id, !event.isHidden);
+                                            }}
+                                          />
+                                        )}
                                         <ActionIconButton
                                           kind="delete"
                                           label={`Удалить ${event.title}`}
@@ -631,7 +709,7 @@ export function SchedulePage() {
             )}
           </div>
 
-          <div className="hidden xl:flex xl:flex-col gap-4">
+          <div className="hidden xl:flex xl:flex-col gap-4 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
             <SurfaceCard className="p-4">
               <div className="flex items-baseline justify-between mb-3 px-1">
                 <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
@@ -705,6 +783,13 @@ export function SchedulePage() {
             </SurfaceCard>
           </div>
         </div>
+
+        <AttendanceUploader
+          events={data.events}
+          open={attendanceEventId !== null}
+          defaultEventId={attendanceEventId ?? undefined}
+          onClose={() => setAttendanceEventId(null)}
+        />
 
         <AdminEditorModal
           open={adminState !== null}

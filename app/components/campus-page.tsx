@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
+  ArrowLeft,
   BedDouble,
   Building,
   BusFront,
@@ -37,6 +38,35 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   building: Building,
 };
 
+/**
+ * Если организатор указал категорию с эмодзи или странным icon-ключом —
+ * пытаемся угадать подходящую иконку по названию / тексту, чтобы в кампусе
+ * был осмысленный визуальный маркер.
+ */
+const ICON_RULES: Array<{ pattern: RegExp; key: keyof typeof CATEGORY_ICONS }> = [
+  { pattern: /wi[- ]?fi|интернет|сеть/i, key: "wifi" },
+  { pattern: /душ|ванн|мыт|гигиен|вод/i, key: "droplets" },
+  { pattern: /принтер|печат|скан/i, key: "printer" },
+  { pattern: /стирк|прачеч|одежд|бель/i, key: "shirt" },
+  { pattern: /розетк|электр|заряд|ток/i, key: "plug" },
+  { pattern: /тишин|режим|часы тишин|сон/i, key: "volume-x" },
+  { pattern: /ед|столов|кух|завтрак|обед|ужин|питан/i, key: "utensils" },
+  { pattern: /комнат|проживан|общежит|сосед|кроват/i, key: "bed" },
+  { pattern: /автобус|транспорт|шаттл|трансфер|проезд/i, key: "bus-front" },
+  { pattern: /адрес|локац|как добрат|корпус/i, key: "map-pinned" },
+  { pattern: /здани|кампус|корпус/i, key: "building" },
+];
+
+function resolveCategoryIcon(category: { icon: string; title: string }): LucideIcon {
+  const direct = CATEGORY_ICONS[category.icon];
+  if (direct) return direct;
+  const haystack = `${category.icon} ${category.title}`;
+  for (const rule of ICON_RULES) {
+    if (rule.pattern.test(haystack)) return CATEGORY_ICONS[rule.key];
+  }
+  return Info;
+}
+
 const CATEGORY_ACCENTS: Record<string, string> = {
   wifi: "var(--accent-blue)",
   droplets: "var(--accent-teal)",
@@ -55,7 +85,7 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 export function CampusPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } = useAppData();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
@@ -81,7 +111,18 @@ export function CampusPage() {
   return (
     <PageShell size="wide">
       <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-3">
-        <h1 className="text-[var(--text-primary)]">Кампус</h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+            className="w-9 h-9 -ml-2 rounded-[var(--radius-md)] flex items-center justify-center transition-colors hover:bg-[var(--bg-subtle)]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-[var(--text-primary)]">Кампус</h1>
+        </div>
         {currentUser.capabilities.canManageCampus && (
           <ActionIconButton
             kind="plus"
@@ -176,7 +217,7 @@ export function CampusPage() {
           <div className="space-y-2">
             {campusCategories.map((category) => {
               const isOpen = expandedId === category.id;
-              const Icon = CATEGORY_ICONS[category.icon] ?? Info;
+              const Icon = resolveCategoryIcon(category);
               const accent = CATEGORY_ACCENTS[category.icon] ?? "var(--text-secondary)";
 
               return (
@@ -210,6 +251,19 @@ export function CampusPage() {
                             event.preventDefault();
                             event.stopPropagation();
                             setAdminState({ kind: "campusCategory", mode: "edit", entity: category });
+                          }}
+                        />
+                        <ActionIconButton
+                          kind={category.isHidden ? "show" : "hide"}
+                          label={category.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void setEntityVisibility(
+                              "campus-categories",
+                              category.id,
+                              !category.isHidden,
+                            );
                           }}
                         />
                         <ActionIconButton

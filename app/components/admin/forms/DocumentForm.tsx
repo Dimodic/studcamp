@@ -66,7 +66,12 @@ export function DocumentForm({ state, onChange, userOptions = [] }: DocumentForm
         onChange={(value) => onChange({ ...state, status: value as DocumentStatus })}
         options={DOCUMENT_STATUS_OPTIONS}
       />
-      <TextField label="Дедлайн" value={state.deadline} onChange={(value) => onChange({ ...state, deadline: value })} />
+      <TextField
+        label="Дедлайн"
+        type="date"
+        value={state.deadline}
+        onChange={(value) => onChange({ ...state, deadline: value })}
+      />
       <TextField
         label="Fallback"
         value={state.fallback}

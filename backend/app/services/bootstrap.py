@@ -37,6 +37,7 @@ from backend.app.schemas.api import (
     CampSchema,
     CampusCategorySchema,
     CapabilitySchema,
+    AttendanceStatsSchema,
     CurrentUserSchema,
     DocumentSchema,
     EventSchema,
@@ -147,6 +148,7 @@ def _serialize_camp(camp: Camp) -> CampSchema:
         university=camp.university,
         dates=CampDatesSchema(start=camp.start_date, end=camp.end_date),
         status=camp.status,
+        dayTitles=camp.day_titles or {},
     )
 
 
@@ -163,12 +165,38 @@ def _serialize_person(user: User) -> PersonSchema:
     )
 
 
-def _serialize_current_user(user: User) -> CurrentUserSchema:
+def _serialize_current_user(
+    user: User,
+    attendance_stats: AttendanceStatsSchema | None = None,
+) -> CurrentUserSchema:
     return CurrentUserSchema(
         **_serialize_person(user).model_dump(),
         email=user.email,
         notificationsOn=user.notifications_enabled,
         capabilities=_capabilities_for(user),
+        attendance=attendance_stats,
+    )
+
+
+def _compute_attendance(
+    events: list[Event],
+    attendance: dict[str, str],
+    user_role: UserRole,
+) -> AttendanceStatsSchema:
+    # Организаторам отметка посещаемости не релевантна — считаем нули.
+    if user_role != UserRole.participant:
+        return AttendanceStatsSchema(present=0, total=0, percentage=0, closed=False)
+    relevant_events = [event for event in events if _resolve_event_status(event) != "cancelled"]
+    total = len(relevant_events)
+    present = sum(
+        1 for event in relevant_events if attendance.get(event.id) == "confirmed"
+    )
+    percentage = int(round(present / total * 100)) if total > 0 else 0
+    return AttendanceStatsSchema(
+        present=present,
+        total=total,
+        percentage=percentage,
+        closed=percentage >= 90,
     )
 
 
@@ -203,6 +231,7 @@ def _serialize_event(
         attendance=attendance.get(event.id),
         day=event.day,
         teacherIds=teacher_ids.get(event.id, []),
+        isHidden=event.is_hidden,
     )
 
 
@@ -221,6 +250,7 @@ def _serialize_project(project: Project) -> ProjectSchema:
         mentorTelegram=project.mentor_telegram,
         mentorPhoto=project.mentor_photo,
         mentorWorkFormat=project.mentor_work_format,
+        isHidden=project.is_hidden,
     )
 
 
@@ -232,6 +262,7 @@ def _serialize_story(story: Story, read_map: dict[str, bool]) -> StorySchema:
         image=story.image,
         read=read_map.get(story.id, False),
         slides=[StorySlideSchema(**slide) for slide in story.slides],
+        isHidden=story.is_hidden,
     )
 
 
@@ -243,6 +274,7 @@ def _serialize_org_update(update: OrgUpdate, read_map: dict[str, bool]) -> OrgUp
         isNew=update.is_new,
         type=update.type.value,
         isRead=read_map.get(update.id, False),
+        isHidden=update.is_hidden,
     )
 
 
@@ -277,6 +309,7 @@ def _serialize_campus_category(category: CampusCategory) -> CampusCategorySchema
         icon=category.icon,
         title=category.title,
         items=category.items,
+        isHidden=category.is_hidden,
     )
 
 
@@ -291,6 +324,7 @@ def _serialize_material(material: Material) -> MaterialSchema:
         fileSize=material.file_size,
         isNew=material.is_new,
         url=material.url,
+        isHidden=material.is_hidden,
     )
 
 
@@ -305,6 +339,7 @@ def _serialize_resource(resource: Resource) -> ResourceSchema:
         day=resource.day,
         eventId=resource.event_id,
         isNew=resource.is_new,
+        isHidden=resource.is_hidden,
     )
 
 
@@ -425,21 +460,31 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
         else []
     )
 
+    attendance_stats = _compute_attendance(list(events), state.attendance, user.role)
+
+    # Организатор видит всё (чтобы управлять), участники и преподаватели —
+    # только незаскрытое. Skip attendance-relevant события из статистики ниже
+    # не требуется: для is_hidden=True такие события у участника не появятся.
+    def visible(items):
+        if is_organizer:
+            return list(items)
+        return [item for item in items if not getattr(item, "is_hidden", False)]
+
     return BootstrapSchema(
         camp=_serialize_camp(camp),
-        currentUser=_serialize_current_user(user),
-        events=[_serialize_event(event, state.attendance, event_teachers) for event in events],
+        currentUser=_serialize_current_user(user, attendance_stats),
+        events=[_serialize_event(event, state.attendance, event_teachers) for event in visible(events)],
         people=[_serialize_person(person) for person in people],
-        projects=[_serialize_project(project) for project in projects],
+        projects=[_serialize_project(project) for project in visible(projects)],
         projectSelectionPhase=camp.project_selection_phase,
         projectPriorities=state.project_priorities,
-        stories=[_serialize_story(story, state.story_reads) for story in stories],
-        orgUpdates=[_serialize_org_update(update, state.update_reads) for update in updates],
+        stories=[_serialize_story(story, state.story_reads) for story in visible(stories)],
+        orgUpdates=[_serialize_org_update(update, state.update_reads) for update in visible(updates)],
         documents=[_serialize_document(document) for document in documents],
-        campusCategories=[_serialize_campus_category(category) for category in campus_categories],
+        campusCategories=[_serialize_campus_category(category) for category in visible(campus_categories)],
         room=_serialize_room(state.room),
-        materials=[_serialize_material(material) for material in materials],
-        resources=[_serialize_resource(resource) for resource in resources],
+        materials=[_serialize_material(material) for material in visible(materials)],
+        resources=[_serialize_resource(resource) for resource in visible(resources)],
         adminUsers=[_serialize_admin_user(person) for person in admin_users],
         adminDocuments=[_serialize_admin_document(document) for document in admin_documents],
         adminRoomAssignments=[_serialize_admin_room_assignment(assignment) for assignment in admin_room_assignments],

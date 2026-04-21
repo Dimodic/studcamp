@@ -80,6 +80,8 @@ class Camp(TimestampMixin, Base):
     current_day: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     total_days: Mapped[int] = mapped_column(Integer, default=14, nullable=False)
     project_selection_phase: Mapped[str] = mapped_column(String(32), default="open", nullable=False)
+    # { "1": "Вводный день", "2": "День системного программирования", ... }
+    day_titles: Mapped[dict[str, str] | None] = mapped_column(JSON)
 
     users: Mapped[list["User"]] = relationship(back_populates="camp")
     events: Mapped[list["Event"]] = relationship(back_populates="camp")
@@ -147,6 +149,7 @@ class Event(TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     materials: Mapped[list[str] | None] = mapped_column(JSON)
     day: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     camp: Mapped[Camp] = relationship(back_populates="events")
     checkins: Mapped[list["EventCheckIn"]] = relationship(back_populates="event", cascade="all, delete-orphan")
@@ -175,6 +178,9 @@ class EventCheckIn(TimestampMixin, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
     attendance_status: Mapped[str] = mapped_column(String(32), default="not_checked", nullable=False)
+    # Откуда пришла отметка: "self" (участник сам), "sheet" (LLM-парсинг фото
+    # листка посещаемости), "manual" (организатор поставил вручную).
+    source: Mapped[str] = mapped_column(String(16), default="self", nullable=False)
 
     user: Mapped[User] = relationship(back_populates="event_checkins")
     event: Mapped[Event] = relationship(back_populates="checkins")
@@ -196,6 +202,7 @@ class Project(TimestampMixin, Base):
     mentor_telegram: Mapped[str | None] = mapped_column(String(128), nullable=True)
     mentor_photo: Mapped[str | None] = mapped_column(String(500), nullable=True)
     mentor_work_format: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     preferences: Mapped[list["ProjectPreference"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
@@ -221,6 +228,7 @@ class Story(TimestampMixin, Base):
     type: Mapped[StoryType] = mapped_column(Enum(StoryType), nullable=False)
     image: Mapped[str] = mapped_column(Text, nullable=False)
     slides: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     reads: Mapped[list["StoryRead"]] = relationship(back_populates="story", cascade="all, delete-orphan")
 
@@ -246,6 +254,7 @@ class OrgUpdate(TimestampMixin, Base):
     time: Mapped[str] = mapped_column(String(32), nullable=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     type: Mapped[UpdateType] = mapped_column(Enum(UpdateType), nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     reads: Mapped[list["UpdateRead"]] = relationship(back_populates="update", cascade="all, delete-orphan")
 
@@ -285,6 +294,7 @@ class CampusCategory(TimestampMixin, Base):
     icon: Mapped[str] = mapped_column(String(64), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     items: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class RoomAssignment(TimestampMixin, Base):
@@ -314,6 +324,7 @@ class Material(TimestampMixin, Base):
     file_size: Mapped[str | None] = mapped_column(String(64))
     is_new: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     event: Mapped[Event | None] = relationship(back_populates="attached_materials")
 
@@ -330,5 +341,6 @@ class Resource(TimestampMixin, Base):
     day: Mapped[int | None] = mapped_column(Integer)
     event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id", ondelete="SET NULL"))
     is_new: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     event: Mapped[Event | None] = relationship(back_populates="resources")

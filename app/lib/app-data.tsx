@@ -34,6 +34,22 @@ interface AppDataContextValue {
     text: string;
     attachments: Array<{ name: string; mimeType: string; base64: string }>;
   }) => Promise<Array<{ kind: string; payload: Record<string, unknown> }>>;
+  parseAttendancePhoto: (input: {
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+    eventId: string;
+    photos: Array<{ name: string; mimeType: string; base64: string }>;
+  }) => Promise<{
+    matched: Array<{ userId: string; name: string; signed: boolean }>;
+    unmatched: string[];
+  }>;
+  markAttendance: (eventId: string, userIds: string[]) => Promise<void>;
+  setEntityVisibility: (
+    resource: AdminResourcePath,
+    entityId: string,
+    hidden: boolean,
+  ) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -367,6 +383,43 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [requireToken],
   );
 
+  const parseAttendancePhoto = useCallback(
+    async (input: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      eventId: string;
+      photos: Array<{ name: string; mimeType: string; base64: string }>;
+    }) => {
+      const authToken = requireToken();
+      return await api.parseAttendancePhoto(authToken, input);
+    },
+    [requireToken],
+  );
+
+  const markAttendance = useCallback(
+    async (eventId: string, userIds: string[]) => {
+      const authToken = requireToken();
+      await api.markAttendance(authToken, eventId, userIds);
+      await refresh();
+    },
+    [refresh, requireToken],
+  );
+
+  const setEntityVisibility = useCallback(
+    async (resource: AdminResourcePath, entityId: string, hidden: boolean) => {
+      const authToken = requireToken();
+      try {
+        await api.setEntityVisibility(authToken, resource, entityId, hidden);
+        await refresh();
+      } catch (nextError) {
+        setError(nextError instanceof Error ? nextError.message : "Не удалось изменить видимость");
+        throw nextError;
+      }
+    },
+    [refresh, requireToken],
+  );
+
   const value = useMemo<AppDataContextValue>(
     () => ({
       status,
@@ -385,6 +438,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       updateAdminEntity,
       deleteAdminEntity,
       parseLlmContent,
+      parseAttendancePhoto,
+      markAttendance,
+      setEntityVisibility,
     }),
     [
       checkInEvent,
@@ -394,11 +450,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       error,
       login,
       logout,
+      markAttendance,
       markStoryRead,
       markUpdatesRead,
+      parseAttendancePhoto,
       parseLlmContent,
       refresh,
       saveProjectPriorities,
+      setEntityVisibility,
       status,
       syncStatus,
       updateAdminEntity,

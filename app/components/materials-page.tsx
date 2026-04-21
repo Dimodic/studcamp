@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
+  ArrowLeft,
   BookOpen,
   CalendarDays,
   CheckSquare,
@@ -131,9 +132,17 @@ interface MaterialRowProps {
   canEdit: boolean;
   onEdit: () => void;
   onDelete?: () => void;
+  onToggleHidden?: () => void;
 }
 
-function MaterialRow({ material, eventLabel, canEdit, onEdit, onDelete }: MaterialRowProps) {
+function MaterialRow({
+  material,
+  eventLabel,
+  canEdit,
+  onEdit,
+  onDelete,
+  onToggleHidden,
+}: MaterialRowProps) {
   const Icon = TYPE_ICONS[material.type] ?? File;
   const accent = TYPE_ACCENT[material.type] ?? "var(--text-secondary)";
   const metaParts = [MATERIAL_TYPE_LABELS[material.type]];
@@ -189,6 +198,16 @@ function MaterialRow({ material, eventLabel, canEdit, onEdit, onDelete }: Materi
           }}
         />
       )}
+      {canEdit && onToggleHidden && (
+        <ActionIconButton
+          kind={material.isHidden ? "show" : "hide"}
+          label={material.isHidden ? "Показать участникам" : "Скрыть от участников"}
+          onClick={(event) => {
+            event.preventDefault();
+            onToggleHidden();
+          }}
+        />
+      )}
       {canEdit && onDelete && (
         <ActionIconButton
           kind="delete"
@@ -208,7 +227,7 @@ function MaterialRow({ material, eventLabel, canEdit, onEdit, onDelete }: Materi
 export function MaterialsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } = useAppData();
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
     mode: "create" | "edit";
@@ -290,11 +309,22 @@ export function MaterialsPage() {
   return (
     <PageShell size="wide">
       <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[var(--text-primary)]">Материалы</h1>
-          <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
-            <CalendarDays size={14} /> День {data.ui.currentDay} из {data.ui.totalDays}
-          </p>
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+            className="w-9 h-9 -ml-2 rounded-[var(--radius-md)] flex items-center justify-center transition-colors hover:bg-[var(--bg-subtle)]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-[var(--text-primary)] truncate">Материалы</h1>
+            <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
+              <CalendarDays size={14} /> День {data.ui.currentDay} из {data.ui.totalDays}
+            </p>
+          </div>
         </div>
         {canManageMaterials && (
           <ActionIconButton
@@ -341,6 +371,9 @@ export function MaterialsPage() {
                         canEdit={canManageMaterials}
                         onEdit={() => editMaterial(material)}
                         onDelete={() => void deleteAdminEntity("materials", material.id)}
+                        onToggleHidden={() =>
+                          void setEntityVisibility("materials", material.id, !material.isHidden)
+                        }
                       />
                     ))}
                   </div>
@@ -390,6 +423,9 @@ export function MaterialsPage() {
                         canEdit={canManageMaterials}
                         onEdit={() => editMaterial(material)}
                         onDelete={() => void deleteAdminEntity("materials", material.id)}
+                        onToggleHidden={() =>
+                          void setEntityVisibility("materials", material.id, !material.isHidden)
+                        }
                       />
                     ))}
                   </div>
@@ -535,6 +571,14 @@ export function MaterialsPage() {
                           }}
                         />
                         <ActionIconButton
+                          kind={material.isHidden ? "show" : "hide"}
+                          label={material.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            void setEntityVisibility("materials", material.id, !material.isHidden);
+                          }}
+                        />
+                        <ActionIconButton
                           kind="delete"
                           label="Удалить"
                           onClick={(event) => {
@@ -608,6 +652,14 @@ export function MaterialsPage() {
                           onClick={(event) => {
                             event.preventDefault();
                             setAdminState({ kind: "resource", mode: "edit", entity: resource });
+                          }}
+                        />
+                        <ActionIconButton
+                          kind={resource.isHidden ? "show" : "hide"}
+                          label={resource.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            void setEntityVisibility("resources", resource.id, !resource.isHidden);
                           }}
                         />
                         <ActionIconButton

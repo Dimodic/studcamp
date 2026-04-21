@@ -341,9 +341,19 @@ interface ProjectSectionProps {
   onToggle?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onToggleHidden?: () => void;
 }
 
-function ProjectSection({ project, phase, priorityIndex, isMyProject, onToggle, onEdit, onDelete }: ProjectSectionProps) {
+function ProjectSection({
+  project,
+  phase,
+  priorityIndex,
+  isMyProject,
+  onToggle,
+  onEdit,
+  onDelete,
+  onToggleHidden,
+}: ProjectSectionProps) {
   const selected = priorityIndex >= 0;
   const isInteractive = phase === "open" && Boolean(onToggle);
   const paragraphs = (project.description ?? project.shortDescription)
@@ -438,6 +448,17 @@ function ProjectSection({ project, phase, priorityIndex, isMyProject, onToggle, 
             }}
           />
         )}
+        {onToggleHidden && (
+          <ActionIconButton
+            kind={project.isHidden ? "show" : "hide"}
+            label={project.isHidden ? "Показать участникам" : "Скрыть от участников"}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleHidden();
+            }}
+          />
+        )}
         {onDelete && (
           <ActionIconButton
             kind="delete"
@@ -478,9 +499,19 @@ interface MentorCardProps {
   onTogglePriority: (projectId: string) => void;
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (project: Project) => void;
+  onToggleProjectHidden?: (project: Project) => void;
 }
 
-function MentorCard({ group, phase, priorities, myProjectId, onTogglePriority, onEditProject, onDeleteProject }: MentorCardProps) {
+function MentorCard({
+  group,
+  phase,
+  priorities,
+  myProjectId,
+  onTogglePriority,
+  onEditProject,
+  onDeleteProject,
+  onToggleProjectHidden,
+}: MentorCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const hasMyProject = group.projects.some((project) => project.id === myProjectId);
   const hasAnySelected = group.projects.some((project) => priorities.includes(project.id));
@@ -532,6 +563,7 @@ function MentorCard({ group, phase, priorities, myProjectId, onTogglePriority, o
                 onToggle={phase === "open" ? () => onTogglePriority(project.id) : undefined}
                 onEdit={onEditProject ? () => onEditProject(project) : undefined}
                 onDelete={onDeleteProject ? () => onDeleteProject(project) : undefined}
+                onToggleHidden={onToggleProjectHidden ? () => onToggleProjectHidden(project) : undefined}
               />
             </div>
           ))}
@@ -552,7 +584,14 @@ function MentorCard({ group, phase, priorities, myProjectId, onTogglePriority, o
 const DEV_PHASES: ProjectSelectionPhase[] = ["countdown", "open", "closed", "results"];
 
 export function ProjectsPage() {
-  const { data, saveProjectPriorities, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const {
+    data,
+    saveProjectPriorities,
+    createAdminEntity,
+    updateAdminEntity,
+    deleteAdminEntity,
+    setEntityVisibility,
+  } = useAppData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [priorities, setPriorities] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
@@ -639,6 +678,11 @@ export function ProjectsPage() {
       onTogglePriority={togglePriority}
       onEditProject={canManage ? (project) => setAdminState({ kind: "project", mode: "edit", entity: project }) : undefined}
       onDeleteProject={canManage ? (project) => void deleteAdminEntity("projects", project.id) : undefined}
+      onToggleProjectHidden={
+        canManage
+          ? (project) => void setEntityVisibility("projects", project.id, !project.isHidden)
+          : undefined
+      }
     />
   );
 

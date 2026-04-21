@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 
 import type {
   AdminDocument,
@@ -189,6 +190,8 @@ export function AdminEditorModal({
       setError("");
     }
   }, [defaults, entity, kind, open]);
+
+  useBodyScrollLock(open);
 
   const modalTitle = useMemo(() => {
     if (!kind) {

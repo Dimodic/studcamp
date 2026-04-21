@@ -24,6 +24,7 @@ import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
 import { splitEventTitle } from "../lib/events";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 function parseDate(value?: string | null): Date | null {
   if (!value) return null;
@@ -53,7 +54,15 @@ interface QuickLink {
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { data, markStoryRead, markUpdatesRead, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const {
+    data,
+    markStoryRead,
+    markUpdatesRead,
+    createAdminEntity,
+    updateAdminEntity,
+    deleteAdminEntity,
+    setEntityVisibility,
+  } = useAppData();
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [adminState, setAdminState] = useState<{
@@ -61,13 +70,15 @@ export function HomePage() {
     mode: "create" | "edit";
     entity?: unknown;
   } | null>(null);
+  useBodyScrollLock(showNotifications);
 
   if (!data) return null;
 
   const { camp, events, stories, orgUpdates: updates, documents, currentUser } = data;
-  const nextEvent =
-    events.find((event) => event.status === "in_progress") ??
-    events.find((event) => event.status === "upcoming");
+  const inProgressEvent = events.find((event) => event.status === "in_progress");
+  const firstUpcoming = events.find((event) => event.status === "upcoming");
+  const nextEvent = inProgressEvent ?? firstUpcoming;
+  const upcomingAfterCurrent = inProgressEvent ? firstUpcoming : null;
   const todayEvents = events.filter((event) => event.day === data.ui.currentDay);
   const readStories = new Set(stories.filter((story) => story.read).map((story) => story.id));
   const unreadCount = updates.filter((update) => !update.isRead).length;
@@ -178,7 +189,11 @@ export function HomePage() {
           )}
           <div className="flex gap-3 overflow-x-auto pb-1">
             {stories.map((story, index) => (
-              <div key={story.id} className="relative shrink-0">
+              <div
+                key={story.id}
+                className="relative shrink-0"
+                style={{ opacity: story.isHidden ? 0.5 : 1 }}
+              >
                 {currentUser.capabilities.canManageStories && (
                   <>
                     <ActionIconButton
@@ -201,6 +216,16 @@ export function HomePage() {
                         if (window.confirm(`Удалить сторис «${story.title}»?`)) {
                           void deleteAdminEntity("stories", story.id);
                         }
+                      }}
+                    />
+                    <ActionIconButton
+                      kind={story.isHidden ? "show" : "hide"}
+                      label={story.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                      className="absolute -bottom-1 -left-1 z-10"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void setEntityVisibility("stories", story.id, !story.isHidden);
                       }}
                     />
                   </>
@@ -344,6 +369,31 @@ export function HomePage() {
             </SurfaceCard>
           )}
 
+          {upcomingAfterCurrent && (
+            <button
+              onClick={() => navigate(`/schedule?event=${upcomingAfterCurrent.id}`)}
+              className="w-full text-left rounded-[var(--radius-md)] border px-4 py-3 flex items-center gap-3 transition-colors hover:bg-[var(--bg-subtle)]"
+              style={{ background: "var(--bg-card)", borderColor: "var(--line-subtle)" }}
+            >
+              <span
+                className="text-[10.5px] uppercase tracking-wider shrink-0 px-2 py-0.5 rounded-full"
+                style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 600 }}
+              >
+                Дальше
+              </span>
+              <span className="text-[13px] shrink-0 tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                {upcomingAfterCurrent.startAt}
+              </span>
+              <span
+                className="flex-1 min-w-0 truncate text-[14px]"
+                style={{ color: "var(--text-primary)", fontWeight: 500 }}
+              >
+                {splitEventTitle(upcomingAfterCurrent.title).title}
+              </span>
+              <ChevronRight size={16} style={{ color: "var(--text-tertiary)" }} className="shrink-0" />
+            </button>
+          )}
+
           {nearestDeadline && (
             <button
               onClick={() => navigate("/documents")}
@@ -459,6 +509,15 @@ export function HomePage() {
                           )}
                           {isDone && (
                             <Check size={12} style={{ color: "var(--text-tertiary)" }} />
+                          )}
+                          {event.attendance === "confirmed" && (
+                            <span
+                              className="text-[10.5px] px-1.5 py-0.5 rounded-full flex items-center gap-1"
+                              style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
+                              title="Посещаемость отмечена"
+                            >
+                              <Check size={10} /> отмечено
+                            </span>
                           )}
                         </div>
                         <p
@@ -681,7 +740,11 @@ export function HomePage() {
                     <div
                       key={update.id}
                       className="rounded-[var(--radius-lg)] p-4 flex items-start gap-3 border"
-                      style={{ background: "var(--bg-card)", borderColor: "var(--line-subtle)" }}
+                      style={{
+                        background: "var(--bg-card)",
+                        borderColor: "var(--line-subtle)",
+                        opacity: update.isHidden ? 0.55 : 1,
+                      }}
                     >
                       <div
                         className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
@@ -711,6 +774,15 @@ export function HomePage() {
                               event.preventDefault();
                               event.stopPropagation();
                               setAdminState({ kind: "orgUpdate", mode: "edit", entity: update });
+                            }}
+                          />
+                          <ActionIconButton
+                            kind={update.isHidden ? "show" : "hide"}
+                            label={update.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void setEntityVisibility("org-updates", update.id, !update.isHidden);
                             }}
                           />
                           <ActionIconButton

@@ -22,6 +22,7 @@ class CampSchema(BaseSchema):
     university: str
     dates: CampDatesSchema
     status: str
+    dayTitles: dict[str, str] = Field(default_factory=dict)
 
 
 class PersonSchema(BaseSchema):
@@ -52,10 +53,18 @@ class CapabilitySchema(BaseSchema):
     canAssignTeachers: bool = False
 
 
+class AttendanceStatsSchema(BaseSchema):
+    present: int
+    total: int
+    percentage: int
+    closed: bool  # 90%+ посещаемости — «закрыта»
+
+
 class CurrentUserSchema(PersonSchema):
     email: str | None = None
     notificationsOn: bool
     capabilities: CapabilitySchema
+    attendance: AttendanceStatsSchema | None = None
 
 
 class EventSchema(BaseSchema):
@@ -74,6 +83,7 @@ class EventSchema(BaseSchema):
     attendance: str | None = None
     day: int
     teacherIds: list[str] = Field(default_factory=list)
+    isHidden: bool = False
 
 
 class ProjectSchema(BaseSchema):
@@ -90,6 +100,7 @@ class ProjectSchema(BaseSchema):
     mentorTelegram: str | None = None
     mentorPhoto: str | None = None
     mentorWorkFormat: str | None = None
+    isHidden: bool = False
 
 
 class StorySlideSchema(BaseSchema):
@@ -111,6 +122,7 @@ class StorySchema(BaseSchema):
     image: str
     read: bool
     slides: list[StorySlideSchema]
+    isHidden: bool = False
 
 
 class OrgUpdateSchema(BaseSchema):
@@ -120,6 +132,7 @@ class OrgUpdateSchema(BaseSchema):
     isNew: bool
     type: str
     isRead: bool
+    isHidden: bool = False
 
 
 class DocumentSchema(BaseSchema):
@@ -142,6 +155,7 @@ class CampusCategorySchema(BaseSchema):
     icon: str
     title: str
     items: list[CampusItemSchema]
+    isHidden: bool = False
 
 
 class RoomInfoSchema(BaseSchema):
@@ -185,6 +199,7 @@ class MaterialSchema(BaseSchema):
     fileSize: str | None = None
     isNew: bool
     url: str
+    isHidden: bool = False
 
 
 class ResourceSchema(BaseSchema):
@@ -197,6 +212,7 @@ class ResourceSchema(BaseSchema):
     day: int | None = None
     eventId: str | None = None
     isNew: bool
+    isHidden: bool = False
 
 
 class UiStateSchema(BaseSchema):
@@ -376,6 +392,7 @@ class CampUpsertSchema(BaseModel):
     startDate: date
     endDate: date
     status: str
+    dayTitles: dict[str, str] | None = None
 
 
 class SimpleStatusSchema(BaseModel):

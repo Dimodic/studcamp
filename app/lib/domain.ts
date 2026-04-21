@@ -21,6 +21,14 @@ export interface Camp {
     end: string;
   };
   status: string;
+  dayTitles?: Record<string, string>;
+}
+
+export interface AttendanceStats {
+  present: number;
+  total: number;
+  percentage: number;
+  closed: boolean;
 }
 
 export interface Person {
@@ -38,6 +46,7 @@ export interface CurrentUser extends Person {
   email?: string | null;
   notificationsOn: boolean;
   capabilities: CapabilitySet;
+  attendance?: AttendanceStats | null;
 }
 
 export interface CapabilitySet {
@@ -73,6 +82,7 @@ export interface Event {
   attendance?: EventAttendance | null;
   day: number;
   teacherIds: string[];
+  isHidden?: boolean;
 }
 
 export interface Project {
@@ -89,6 +99,7 @@ export interface Project {
   mentorTelegram?: string | null;
   mentorPhoto?: string | null;
   mentorWorkFormat?: string | null;
+  isHidden?: boolean;
 }
 
 export interface StorySlide {
@@ -104,6 +115,7 @@ export interface Story {
   image: string;
   read: boolean;
   slides: StorySlide[];
+  isHidden?: boolean;
 }
 
 export interface OrgUpdate {
@@ -113,6 +125,7 @@ export interface OrgUpdate {
   isNew: boolean;
   type: UpdateType;
   isRead: boolean;
+  isHidden?: boolean;
 }
 
 export interface DocItem {
@@ -133,6 +146,7 @@ export interface CampusCategory {
     title: string;
     detail: string;
   }[];
+  isHidden?: boolean;
 }
 
 export interface RoomInfo {
@@ -169,6 +183,7 @@ export interface Material {
   fileSize?: string | null;
   isNew: boolean;
   url: string;
+  isHidden?: boolean;
 }
 
 export interface Resource {
@@ -181,6 +196,7 @@ export interface Resource {
   day?: number | null;
   eventId?: string | null;
   isNew: boolean;
+  isHidden?: boolean;
 }
 
 export interface BootstrapPayload {
