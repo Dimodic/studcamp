@@ -1,0 +1,1 @@
+"""Studcamp backend package."""

@@ -1,0 +1,6 @@
+{
+  "appId": "com.studcamp.app",
+  "appName": "Studcamp",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Studcamp</string>
+    <string name="title_activity_main">Studcamp</string>
+    <string name="package_name">com.studcamp.app</string>
+    <string name="custom_url_scheme">com.studcamp.app</string>
+</resources>

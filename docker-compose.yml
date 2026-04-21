@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: studcamp-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-studcamp}
+      POSTGRES_USER: ${POSTGRES_USER:-studcamp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studcamp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - studcamp-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studcamp} -d ${POSTGRES_DB:-studcamp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: studcamp-api
+    environment:
+      STUDCAMP_ENV: docker
+      STUDCAMP_DATABASE_URL: ${STUDCAMP_DATABASE_URL:-postgresql+psycopg://studcamp:studcamp@db:5432/studcamp}
+      STUDCAMP_CORS_ORIGINS: ${STUDCAMP_CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command:
+      - /bin/sh
+      - -c
+      - >
+        alembic -c backend/alembic.ini upgrade head &&
+        python -m backend.app.seed_data &&
+        gunicorn backend.app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+
+volumes:
+  studcamp-postgres:

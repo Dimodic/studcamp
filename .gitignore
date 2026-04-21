@@ -1,0 +1,29 @@
+# Environments & secrets
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+
+# Build & binary artifacts
+*.apk
+*.sqlite3
+*.log
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Android / Capacitor
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# Test browser profiles
+.chrome-test-profile*
+
+# Local agent/editor state
+.claude/
