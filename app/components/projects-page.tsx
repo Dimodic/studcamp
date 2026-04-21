@@ -1030,52 +1030,57 @@ export function ProjectsPage() {
       </div>
 
       {canManage && (
-        <div className="px-5 mb-3">
-          <div
-            className="flex items-center flex-wrap gap-2 p-2 rounded-[var(--radius-md)]"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--line-subtle)" }}
-          >
-            <span className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+        <div className="px-5 mb-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[11px] uppercase tracking-wider shrink-0"
+              style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+            >
               Фаза
             </span>
-            {PHASE_OPTIONS.map((option) => {
-              const active = phase === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  disabled={phaseBusy || active}
-                  onClick={() => void handleSetPhase(option.value)}
-                  className="text-[12.5px] px-3 py-1.5 rounded-full transition-colors"
-                  style={{
-                    background: active ? "var(--brand)" : "transparent",
-                    color: active ? "var(--brand-contrast)" : "var(--text-primary)",
-                    border: `1px solid ${active ? "var(--brand)" : "var(--line-subtle)"}`,
-                    fontWeight: active ? 600 : 500,
-                    opacity: phaseBusy && !active ? 0.5 : 1,
-                  }}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-            {(phase === "closed" || phase === "results") && (
-              <button
-                type="button"
-                onClick={() => void handleAutoDistribute()}
-                disabled={distributing}
-                className="ml-auto text-[12.5px] px-3 py-1.5 rounded-full transition-colors"
-                style={{
-                  background: "var(--accent-peach)",
-                  color: "var(--text-primary)",
-                  fontWeight: 600,
-                  opacity: distributing ? 0.6 : 1,
-                }}
-              >
-                {distributing ? "Распределяю…" : "Распределить по приоритетам"}
-              </button>
-            )}
+            <div
+              className="flex-1 flex gap-1 p-1 rounded-full overflow-x-auto"
+              style={{ background: "var(--bg-subtle)" }}
+            >
+              {PHASE_OPTIONS.map((option) => {
+                const active = phase === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={phaseBusy || active}
+                    onClick={() => void handleSetPhase(option.value)}
+                    className="flex-1 min-w-max text-[13px] px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
+                    style={{
+                      background: active ? "var(--bg-card)" : "transparent",
+                      color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                      fontWeight: active ? 600 : 500,
+                      boxShadow: active ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
+                      opacity: phaseBusy && !active ? 0.5 : 1,
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          {(phase === "closed" || phase === "results") && (
+            <button
+              type="button"
+              onClick={() => void handleAutoDistribute()}
+              disabled={distributing}
+              className="w-full sm:w-auto text-[13px] px-4 py-2 rounded-[var(--radius-md)] transition-colors"
+              style={{
+                background: "var(--accent-peach)",
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                opacity: distributing ? 0.6 : 1,
+              }}
+            >
+              {distributing ? "Распределяю…" : "↻ Распределить по приоритетам"}
+            </button>
+          )}
         </div>
       )}
 
