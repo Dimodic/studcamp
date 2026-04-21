@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Check,
   CheckSquare,
+  Clock,
   Download,
   ExternalLink,
   File,
@@ -15,6 +16,7 @@ import {
   MapPin,
   Navigation,
   Video,
+  X as XIcon,
   type LucideIcon,
 } from "lucide-react";
 import { PageShell, SurfaceCard } from "./common";
@@ -103,9 +105,10 @@ function openExternal(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-/** Маленькая цветная точка посещения для списка событий. Не распирает строку,
-    не сдвигает преподавателя — живёт как 6-пиксельный кружок с title. */
-function AttendanceDot({
+/** Маленький самостоятельный бейдж с иконкой посещаемости. Рендерится как
+ * 22-пиксельный кружок у правого края карточки — не зависит от layout
+ * преподавателя и сразу читается как «статус посещения». */
+function AttendanceBadge({
   attendance,
   eventStatus,
   isParticipant,
@@ -117,26 +120,36 @@ function AttendanceDot({
   counts: boolean;
 }) {
   if (!isParticipant || !counts) return null;
-  let color: string | null = null;
+  let bg = "";
+  let color = "";
+  let Icon: LucideIcon | null = null;
   let tooltip = "";
   if (attendance === "confirmed") {
+    bg = "var(--success-soft)";
     color = "var(--success)";
+    Icon = Check;
     tooltip = "Посещение отмечено";
   } else if (attendance === "pending") {
+    bg = "var(--warning-soft)";
     color = "var(--warning)";
+    Icon = Clock;
     tooltip = "Посещение проверяется";
   } else if (eventStatus === "completed") {
+    bg = "var(--danger-soft)";
     color = "var(--danger)";
+    Icon = XIcon;
     tooltip = "Занятие пропущено";
   }
-  if (!color) return null;
+  if (!Icon) return null;
   return (
     <span
       aria-label={tooltip}
       title={tooltip}
-      className="inline-block rounded-full shrink-0"
-      style={{ width: 8, height: 8, background: color }}
-    />
+      className="inline-flex items-center justify-center rounded-full shrink-0"
+      style={{ width: 22, height: 22, background: bg, color }}
+    >
+      <Icon size={12} strokeWidth={2.4} />
+    </span>
   );
 }
 
@@ -403,15 +416,15 @@ export function SchedulePage() {
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[13px] flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
-                                      <AttendanceDot
-                                        attendance={event.attendance}
-                                        eventStatus={event.status}
-                                        isParticipant={currentUser.role === "participant"}
-                                        counts={event.countsForAttendance !== false}
-                                      />
+                                    <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
                                       {event.startAt}–{event.endAt}
                                     </span>
+                                    <AttendanceBadge
+                                      attendance={event.attendance}
+                                      eventStatus={event.status}
+                                      isParticipant={currentUser.role === "participant"}
+                                      counts={event.countsForAttendance !== false}
+                                    />
                                     {hasLaptop && (
                                       <span
                                         className="flex items-center gap-1 text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"

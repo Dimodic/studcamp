@@ -17,6 +17,7 @@ import {
   Navigation,
   Pencil,
   RefreshCw,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { StoryViewer } from "./story-viewer";
@@ -512,20 +513,21 @@ export function HomePage() {
                           )}
                           {currentUser.role === "participant" && event.countsForAttendance !== false && (() => {
                             const st = event.attendance === "confirmed"
-                              ? { color: "var(--success)", tip: "Посещение отмечено" }
-                              : event.attendance === "pending"
-                                ? { color: "var(--warning)", tip: "Посещение проверяется" }
-                                : event.status === "completed"
-                                  ? { color: "var(--danger)", tip: "Занятие пропущено" }
-                                  : null;
+                              ? { bg: "var(--success-soft)", color: "var(--success)", Icon: Check, tip: "Посещение отмечено" }
+                              : event.status === "completed"
+                                ? { bg: "var(--danger-soft)", color: "var(--danger)", Icon: X as LucideIcon, tip: "Занятие пропущено" }
+                                : null;
                             if (!st) return null;
+                            const Ico = st.Icon;
                             return (
                               <span
                                 aria-label={st.tip}
                                 title={st.tip}
-                                className="inline-block rounded-full shrink-0"
-                                style={{ width: 7, height: 7, background: st.color }}
-                              />
+                                className="inline-flex items-center justify-center rounded-full shrink-0"
+                                style={{ width: 20, height: 20, background: st.bg, color: st.color }}
+                              >
+                                <Ico size={11} strokeWidth={2.4} />
+                              </span>
                             );
                           })()}
                         </div>
