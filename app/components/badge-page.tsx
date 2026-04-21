@@ -36,16 +36,19 @@ export function BadgePage() {
       <div className="flex-1 flex items-center justify-center px-6 py-6">
         <SurfaceCard className="relative w-full max-w-md overflow-hidden">
           {/* Фоновая картинка — лежит под всем содержимым карточки.
-              Если файла нет, peach-заливка ниже (--accent-peach) не даст
-              карточке стать пустой. */}
+              Image зумим до 160% по высоте и прижимаем к низу карточки,
+              чтобы логотип Алисы ушёл в верхний блок (под «Яндекс
+              Образование»), а аватар и ФИО стояли над нейтральной частью.
+              Peach-заливка остаётся как fallback пока файла нет. */}
           <div
             aria-hidden
             className="absolute inset-0"
             style={{
               background: "var(--accent-peach)",
               backgroundImage: "url('/badge-bg.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundSize: "auto 160%",
+              backgroundPosition: "center 100%",
+              backgroundRepeat: "no-repeat",
             }}
           />
           {/* Мягкий overlay сверху: делает центр светлее чтобы аватар + ФИО читались
