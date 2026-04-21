@@ -47,7 +47,7 @@ export function BadgePage() {
               background: "var(--accent-peach)",
               backgroundImage: "url('/badge-bg.jpg')",
               backgroundSize: "auto 160%",
-              backgroundPosition: "center 100%",
+              backgroundPosition: "center 80%",
               backgroundRepeat: "no-repeat",
             }}
           />
