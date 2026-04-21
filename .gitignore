@@ -27,3 +27,8 @@ android/local.properties
 
 # Local agent/editor state
 .claude/
+
+# Sessions artifacts
+studcamp.db
+screenshots/
+scripts/
