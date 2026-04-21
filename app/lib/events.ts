@@ -1,6 +1,22 @@
+import type { Event as CampEvent } from "./domain";
+
 export interface SplitEventTitle {
   title: string;
   teacher: string | null;
+}
+
+// Регулярка совпадает с серверной `_counts_for_attendance` — питание, свободная
+// работа над проектом, экскурсии и прочие не-учебные форматы. Используется как
+// фолбэк на фронте, если `event.countsForAttendance` ещё не приехал в bootstrap
+// (например старый закешированный snapshot).
+const NON_COUNTED_RE =
+  /(завтрак|обед|ужин|кофе|работ[аы]?\s+над\s+проектам|регистрац|отъезд|экскурс|мероприят|знакомств|вручен|открыт|закрыт|гитарник)/i;
+
+export function isCountableEvent(event: Pick<CampEvent, "type" | "title" | "countsForAttendance">): boolean {
+  if (event.countsForAttendance === false) return false;
+  if (event.countsForAttendance === true) return true;
+  const haystack = `${event.type ?? ""} ${event.title ?? ""}`;
+  return !NON_COUNTED_RE.test(haystack);
 }
 
 const TRAILING_PARENS = /\s*\(([^()]+)\)\s*$/;

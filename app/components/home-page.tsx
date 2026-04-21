@@ -23,7 +23,7 @@ import {
 import { StoryViewer } from "./story-viewer";
 import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
-import { splitEventTitle } from "../lib/events";
+import { isCountableEvent, splitEventTitle } from "../lib/events";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
@@ -508,10 +508,7 @@ export function HomePage() {
                               Сейчас
                             </span>
                           )}
-                          {isDone && (
-                            <Check size={12} style={{ color: "var(--text-tertiary)" }} />
-                          )}
-                          {currentUser.role === "participant" && event.countsForAttendance !== false && (() => {
+                          {currentUser.role === "participant" && isCountableEvent(event) && (() => {
                             const st = event.attendance === "confirmed"
                               ? { bg: "var(--success-soft)", color: "var(--success)", Icon: Check, tip: "Посещение отмечено" }
                               : event.status === "completed"

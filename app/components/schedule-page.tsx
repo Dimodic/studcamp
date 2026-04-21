@@ -23,7 +23,7 @@ import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
 import type { Event } from "../lib/domain";
-import { splitEventTitle } from "../lib/events";
+import { isCountableEvent, splitEventTitle } from "../lib/events";
 import { AttendanceUploader } from "./schedule/AttendanceUploader";
 import { ClipboardCheck } from "lucide-react";
 import { MATERIAL_TYPE_LABELS } from "../lib/options";
@@ -423,7 +423,7 @@ export function SchedulePage() {
                                       attendance={event.attendance}
                                       eventStatus={event.status}
                                       isParticipant={currentUser.role === "participant"}
-                                      counts={event.countsForAttendance !== false}
+                                      counts={isCountableEvent(event)}
                                     />
                                     {hasLaptop && (
                                       <span

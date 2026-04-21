@@ -141,10 +141,8 @@ export function ProfilePage() {
 
       <div className="px-5 pb-8 space-y-6">
         <SurfaceCard className="overflow-hidden">
-          <div
-            className="px-5 sm:px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-          >
-            <div className="flex items-start gap-4 min-w-0 w-full">
+          <div className="px-5 sm:px-6 pt-6 pb-5 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+            <div className="flex items-start gap-4 min-w-0">
               <Avatar name={currentUser.name} size={72} />
               <div className="flex-1 min-w-0">
                 <h2
@@ -166,55 +164,55 @@ export function ProfilePage() {
                     {ROLE_LABELS[currentUser.role] ?? currentUser.role}
                   </span>
                   {currentUser.email && (
-                    <span className="text-[12.5px]" style={{ color: "var(--text-tertiary)" }}>
+                    <span className="text-[12.5px] truncate max-w-full" style={{ color: "var(--text-tertiary)" }}>
                       {currentUser.email}
                     </span>
                   )}
                 </div>
               </div>
-              {currentUser.role === "participant" && currentUser.attendance && (
-                <div
-                  className="shrink-0 flex items-center gap-3 rounded-[var(--radius-md)] p-2.5 pr-3.5"
-                  style={{ background: "var(--bg-card)", border: "1px solid var(--line-subtle)" }}
-                  title={
-                    currentUser.attendance.total > 0
-                      ? `Вы присутствовали на ${currentUser.attendance.present} из ${currentUser.attendance.total} засчитываемых занятий`
-                      : "Посещаемость появится после первых занятий"
-                  }
-                >
-                  <ProgressRing
-                    value={currentUser.attendance.percentage}
-                    size={56}
-                    stroke={5}
-                  />
-                  <div className="min-w-0">
-                    <p
-                      className="text-[11px] uppercase tracking-wider"
-                      style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
-                    >
-                      Посещаемость
-                    </p>
-                    <p
-                      className="text-[13px] leading-tight mt-0.5"
-                      style={{ color: "var(--text-primary)", fontWeight: 500 }}
-                    >
-                      {currentUser.attendance.total > 0
-                        ? `${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`
-                        : "Ждём первые занятия"}
-                    </p>
-                    {currentUser.attendance.closed && (
-                      <p
-                        className="text-[11.5px] mt-0.5"
-                        style={{ color: "var(--success)", fontWeight: 600 }}
-                      >
-                        ✓ Закрыта
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-
+            {currentUser.role === "participant" && currentUser.attendance && (
+              <div
+                className="shrink-0 self-stretch lg:self-start flex items-center gap-3 rounded-[var(--radius-md)] p-3 pr-4"
+                style={{ background: "var(--bg-subtle)" }}
+                title={
+                  currentUser.attendance.total > 0
+                    ? `Вы присутствовали на ${currentUser.attendance.present} из ${currentUser.attendance.total} засчитываемых занятий`
+                    : "Посещаемость появится после первых занятий"
+                }
+              >
+                <ProgressRing
+                  value={currentUser.attendance.percentage}
+                  size={56}
+                  stroke={5}
+                  baseColor="var(--bg-card)"
+                />
+                <div className="min-w-0">
+                  <p
+                    className="text-[11px] uppercase tracking-wider"
+                    style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+                  >
+                    Посещаемость
+                  </p>
+                  <p
+                    className="text-[13px] leading-tight mt-0.5"
+                    style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                  >
+                    {currentUser.attendance.total > 0
+                      ? `${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`
+                      : "Ждём первые занятия"}
+                  </p>
+                  {currentUser.attendance.closed && (
+                    <p
+                      className="text-[11.5px] mt-0.5"
+                      style={{ color: "var(--success)", fontWeight: 600 }}
+                    >
+                      ✓ Закрыта
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div
