@@ -1030,8 +1030,8 @@ export function ProjectsPage() {
       </div>
 
       {canManage && (
-        <div className="px-5 mb-3 space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="px-5 mb-3 flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <span
               className="text-[11px] uppercase tracking-wider shrink-0"
               style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
@@ -1070,7 +1070,7 @@ export function ProjectsPage() {
               type="button"
               onClick={() => void handleAutoDistribute()}
               disabled={distributing}
-              className="w-full sm:w-auto text-[13px] px-4 py-2 rounded-[var(--radius-md)] transition-colors"
+              className="w-full sm:w-auto shrink-0 text-[13px] px-4 py-2 rounded-full transition-colors"
               style={{
                 background: "var(--accent-peach)",
                 color: "var(--text-primary)",
