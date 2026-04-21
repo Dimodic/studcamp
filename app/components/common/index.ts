@@ -9,4 +9,5 @@ export { ImageWithFallback } from "./ImageWithFallback";
 export { InfoRow } from "./InfoRow";
 export { PageHeader, SectionHeader } from "./PageHeader";
 export { PageShell } from "./PageShell";
+export { ProgressRing } from "./ProgressRing";
 export { SurfaceCard } from "./SurfaceCard";

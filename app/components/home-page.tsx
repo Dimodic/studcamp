@@ -510,26 +510,24 @@ export function HomePage() {
                           {isDone && (
                             <Check size={12} style={{ color: "var(--text-tertiary)" }} />
                           )}
-                          {event.attendance === "confirmed" && (
-                            <span
-                              className="text-[10.5px] px-1.5 py-0.5 rounded-full flex items-center gap-1"
-                              style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
-                              title="Посещаемость отмечена"
-                            >
-                              <Check size={10} /> отмечено
-                            </span>
-                          )}
-                          {currentUser.role === "participant" &&
-                            event.attendance !== "confirmed" &&
-                            event.status === "completed" && (
+                          {currentUser.role === "participant" && event.countsForAttendance !== false && (() => {
+                            const st = event.attendance === "confirmed"
+                              ? { color: "var(--success)", tip: "Посещение отмечено" }
+                              : event.attendance === "pending"
+                                ? { color: "var(--warning)", tip: "Посещение проверяется" }
+                                : event.status === "completed"
+                                  ? { color: "var(--danger)", tip: "Занятие пропущено" }
+                                  : null;
+                            if (!st) return null;
+                            return (
                               <span
-                                className="text-[10.5px] px-1.5 py-0.5 rounded-full flex items-center gap-1"
-                                style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}
-                                title="Вы не были отмечены на этом занятии"
-                              >
-                                пропущено
-                              </span>
-                            )}
+                                aria-label={st.tip}
+                                title={st.tip}
+                                className="inline-block rounded-full shrink-0"
+                                style={{ width: 7, height: 7, background: st.color }}
+                              />
+                            );
+                          })()}
                         </div>
                         <p
                           className="text-[14.5px] mt-0.5 leading-snug"

@@ -83,6 +83,7 @@ export interface Event {
   day: number;
   teacherIds: string[];
   isHidden?: boolean;
+  countsForAttendance?: boolean;
 }
 
 export interface Project {

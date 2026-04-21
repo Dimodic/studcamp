@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, time, timezone
 from zoneinfo import ZoneInfo
@@ -186,7 +187,11 @@ def _compute_attendance(
     # Организаторам отметка посещаемости не релевантна — считаем нули.
     if user_role != UserRole.participant:
         return AttendanceStatsSchema(present=0, total=0, percentage=0, closed=False)
-    relevant_events = [event for event in events if _resolve_event_status(event) != "cancelled"]
+    relevant_events = [
+        event
+        for event in events
+        if _resolve_event_status(event) != "cancelled" and _counts_for_attendance(event)
+    ]
     total = len(relevant_events)
     present = sum(
         1 for event in relevant_events if attendance.get(event.id) == "confirmed"
@@ -198,6 +203,22 @@ def _compute_attendance(
         percentage=percentage,
         closed=percentage >= 90,
     )
+
+
+# Типы занятий, на которые «не ставится отметка»: питание, свободная работа
+# над проектами, экскурсии и орг-события. Считаем, что отметка нужна только
+# на лекциях / семинарах / практиках и подобных учебных форматах.
+_NON_COUNTED_TYPE_RE = re.compile(
+    r"(завтрак|обед|ужин|кофе|работ[аы]?\s+над\s+проектам|"
+    r"регистрац|отъезд|экскурс|мероприят|знакомств|"
+    r"вручен|открыт|закрыт|гитарник)",
+    re.IGNORECASE,
+)
+
+
+def _counts_for_attendance(event: Event) -> bool:
+    haystack = f"{event.type or ''} {event.title or ''}"
+    return not _NON_COUNTED_TYPE_RE.search(haystack)
 
 
 def _serialize_admin_user(user: User) -> AdminUserSchema:
@@ -232,6 +253,7 @@ def _serialize_event(
         day=event.day,
         teacherIds=teacher_ids.get(event.id, []),
         isHidden=event.is_hidden,
+        countsForAttendance=_counts_for_attendance(event),
     )
 
 

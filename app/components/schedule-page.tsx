@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
-  AlertTriangle,
   BookOpen,
   CalendarDays,
   Check,
-  CheckCircle2,
   CheckSquare,
   Download,
   ExternalLink,
@@ -105,37 +103,41 @@ function openExternal(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function AttendanceBadge({
+/** Маленькая цветная точка посещения для списка событий. Не распирает строку,
+    не сдвигает преподавателя — живёт как 6-пиксельный кружок с title. */
+function AttendanceDot({
   attendance,
   eventStatus,
   isParticipant,
+  counts,
 }: {
   attendance?: "confirmed" | "pending" | "not_checked" | null;
   eventStatus: string;
   isParticipant: boolean;
+  counts: boolean;
 }) {
+  if (!isParticipant || !counts) return null;
+  let color: string | null = null;
+  let tooltip = "";
   if (attendance === "confirmed") {
-    return (
-      <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--success)" }}>
-        <CheckCircle2 size={13} /> Отмечено
-      </span>
-    );
+    color = "var(--success)";
+    tooltip = "Посещение отмечено";
+  } else if (attendance === "pending") {
+    color = "var(--warning)";
+    tooltip = "Посещение проверяется";
+  } else if (eventStatus === "completed") {
+    color = "var(--danger)";
+    tooltip = "Занятие пропущено";
   }
-  if (attendance === "pending") {
-    return (
-      <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--warning)" }}>
-        <AlertTriangle size={13} /> Проверяется
-      </span>
-    );
-  }
-  if (isParticipant && eventStatus === "completed") {
-    return (
-      <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--danger)" }}>
-        <AlertTriangle size={13} /> Пропущено
-      </span>
-    );
-  }
-  return null;
+  if (!color) return null;
+  return (
+    <span
+      aria-label={tooltip}
+      title={tooltip}
+      className="inline-block rounded-full shrink-0"
+      style={{ width: 8, height: 8, background: color }}
+    />
+  );
 }
 
 interface EventGroup {
@@ -401,7 +403,13 @@ export function SchedulePage() {
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                                    <span className="text-[13px] flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
+                                      <AttendanceDot
+                                        attendance={event.attendance}
+                                        eventStatus={event.status}
+                                        isParticipant={currentUser.role === "participant"}
+                                        counts={event.countsForAttendance !== false}
+                                      />
                                       {event.startAt}–{event.endAt}
                                     </span>
                                     {hasLaptop && (
@@ -461,11 +469,6 @@ export function SchedulePage() {
                                         Отменено
                                       </span>
                                     )}
-                                    <AttendanceBadge
-                                      attendance={event.attendance}
-                                      eventStatus={event.status}
-                                      isParticipant={currentUser.role === "participant"}
-                                    />
                                     {canEditEvent && (
                                       <>
                                         <ActionIconButton

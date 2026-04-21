@@ -84,6 +84,7 @@ class EventSchema(BaseSchema):
     day: int
     teacherIds: list[str] = Field(default_factory=list)
     isHidden: bool = False
+    countsForAttendance: bool = True
 
 
 class ProjectSchema(BaseSchema):

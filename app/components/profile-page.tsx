@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import {
   Bell,
   Building2,
-  CheckCircle2,
   ChevronRight,
   CreditCard,
   FileText,
@@ -14,7 +13,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { Avatar, PageShell, SurfaceCard } from "./common";
+import { Avatar, PageShell, ProgressRing, SurfaceCard } from "./common";
 import { MagicBlock } from "./profile/MagicBlock";
 import { useAppData } from "../lib/app-data";
 import { ROLE_LABELS, ROLE_STYLES } from "../lib/options";
@@ -145,7 +144,7 @@ export function ProfilePage() {
           <div
             className="px-5 sm:px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
           >
-            <div className="flex items-start gap-4 min-w-0">
+            <div className="flex items-start gap-4 min-w-0 w-full">
               <Avatar name={currentUser.name} size={72} />
               <div className="flex-1 min-w-0">
                 <h2
@@ -166,36 +165,6 @@ export function ProfilePage() {
                   >
                     {ROLE_LABELS[currentUser.role] ?? currentUser.role}
                   </span>
-                  {currentUser.role === "participant" && currentUser.attendance && (
-                    <span
-                      className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)] inline-flex items-center gap-1.5"
-                      style={{
-                        background: currentUser.attendance.closed
-                          ? "var(--success-soft)"
-                          : currentUser.attendance.total === 0
-                            ? "var(--bg-subtle)"
-                            : "var(--accent-peach)",
-                        color: currentUser.attendance.closed
-                          ? "var(--success)"
-                          : "var(--text-primary)",
-                        fontWeight: 500,
-                      }}
-                      title={
-                        currentUser.attendance.total > 0
-                          ? `${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`
-                          : "Посещаемость появится, как только пройдут первые занятия"
-                      }
-                    >
-                      {currentUser.attendance.closed && <CheckCircle2 size={13} />}
-                      Посещаемость: {currentUser.attendance.percentage}%
-                      {currentUser.attendance.total > 0 && (
-                        <span style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>
-                          ({currentUser.attendance.present}/{currentUser.attendance.total})
-                        </span>
-                      )}
-                      {currentUser.attendance.closed && " · закрыта"}
-                    </span>
-                  )}
                   {currentUser.email && (
                     <span className="text-[12.5px]" style={{ color: "var(--text-tertiary)" }}>
                       {currentUser.email}
@@ -203,6 +172,35 @@ export function ProfilePage() {
                   )}
                 </div>
               </div>
+              {currentUser.role === "participant" && currentUser.attendance && (
+                <div className="shrink-0 flex flex-col items-center gap-1.5 pt-1">
+                  <ProgressRing
+                    value={currentUser.attendance.percentage}
+                    size={66}
+                    stroke={6}
+                    title={
+                      currentUser.attendance.total > 0
+                        ? `Посещаемость: ${currentUser.attendance.present} из ${currentUser.attendance.total}`
+                        : "Посещаемость появится после первых занятий"
+                    }
+                  />
+                  <span
+                    className="text-[11px] uppercase tracking-wider"
+                    style={{
+                      color: currentUser.attendance.closed
+                        ? "var(--success)"
+                        : "var(--text-tertiary)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {currentUser.attendance.closed
+                      ? "Закрыта"
+                      : currentUser.attendance.total === 0
+                        ? "Ждём занятий"
+                        : `${currentUser.attendance.present}/${currentUser.attendance.total}`}
+                  </span>
+                </div>
+              )}
             </div>
 
           </div>
