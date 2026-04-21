@@ -150,8 +150,15 @@ def _seed_projects(db: Session, projects: Iterable[dict]) -> None:
                 id=payload["id"],
                 title=payload["title"],
                 short_description=payload["short_description"],
+                description=payload.get("description"),
                 direction=payload["direction"],
                 min_team=payload["min_team"],
+                mentor_name=payload.get("mentor_name"),
+                mentor_position=payload.get("mentor_position"),
+                mentor_city=payload.get("mentor_city"),
+                mentor_telegram=payload.get("mentor_telegram"),
+                mentor_photo=payload.get("mentor_photo"),
+                mentor_work_format=payload.get("mentor_work_format"),
                 max_team=payload["max_team"],
             )
         )

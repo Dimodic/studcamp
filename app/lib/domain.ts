@@ -79,9 +79,16 @@ export interface Project {
   id: string;
   title: string;
   shortDescription: string;
+  description?: string | null;
   direction: string;
   minTeam: number;
   maxTeam: number;
+  mentorName?: string | null;
+  mentorPosition?: string | null;
+  mentorCity?: string | null;
+  mentorTelegram?: string | null;
+  mentorPhoto?: string | null;
+  mentorWorkFormat?: string | null;
 }
 
 export interface StorySlide {
@@ -211,7 +218,8 @@ export type AdminResourcePath =
   | "resources"
   | "campus-categories"
   | "room-assignments"
-  | "documents";
+  | "documents"
+  | "camp";
 
 export interface LoginResponse {
   token: string;

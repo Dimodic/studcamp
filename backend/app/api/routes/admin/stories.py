@@ -48,3 +48,16 @@ def update_story(
     db.add(story)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{story_id}", response_model=SimpleStatusSchema)
+def delete_story(
+    story_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    story = get_or_404(db, Story, story_id)
+    db.delete(story)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

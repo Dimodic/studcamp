@@ -1,7 +1,8 @@
+// Палитра из айдентики Яндекс Образования (см. styles/theme.css — --accent-*).
 const COLORS = [
-  "#FF6B6B", "#E85D9B", "#A855F7", "#6C63FF", "#3B82F6",
-  "#0EA5E9", "#14B8A6", "#22C55E", "#84CC16", "#EAB308",
-  "#F97316", "#EF4444", "#8B5CF6", "#06B6D4", "#10B981",
+  "#799DFF", "#FDC2B4", "#DAD06E", "#FF37B9", "#9586E5",
+  "#5A9BB9", "#A48EEF", "#82E5F0", "#F9D1BD", "#F5EB7D",
+  "#7F5DD8",
 ];
 
 function hashName(name: string): number {

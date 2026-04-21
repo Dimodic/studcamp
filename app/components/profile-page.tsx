@@ -1,12 +1,121 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router";
-import { Bell, Building2, ChevronRight, CreditCard, FileText, FolderOpen, LogOut, RefreshCw, Shield } from "lucide-react";
-import { Avatar, PageShell, RoleBadge, SurfaceCard } from "./common";
+import {
+  Bell,
+  Building2,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  FolderOpen,
+  LogOut,
+  MapPin,
+  Shield,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { Avatar, PageShell, SurfaceCard } from "./common";
+import { MagicBlock } from "./profile/MagicBlock";
 import { useAppData } from "../lib/app-data";
+import { ROLE_LABELS, ROLE_STYLES } from "../lib/options";
+
+const QUICK_LINKS: Array<{
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  path: string;
+  accent: string;
+}> = [
+  {
+    icon: CreditCard,
+    label: "Бейдж участника",
+    description: "QR-код для входа и зон",
+    path: "/profile/badge",
+    accent: "var(--accent-blue)",
+  },
+  {
+    icon: FileText,
+    label: "Мои документы",
+    description: "Заявления и анкеты",
+    path: "/documents",
+    accent: "var(--accent-lilac)",
+  },
+  {
+    icon: FolderOpen,
+    label: "Материалы",
+    description: "Презентации и записи",
+    path: "/materials",
+    accent: "var(--accent-teal)",
+  },
+  {
+    icon: Building2,
+    label: "Кампус",
+    description: "Проживание и логистика",
+    path: "/campus",
+    accent: "var(--accent-violet)",
+  },
+];
+
+function formatCampDates(start: string, end: string): string {
+  const startDate = new Date(`${start}T00:00:00`);
+  const endDate = new Date(`${end}T00:00:00`);
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) {
+    return `${start} — ${end}`;
+  }
+  const formatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" });
+  const yearFormatter = new Intl.DateTimeFormat("ru-RU", { year: "numeric" });
+  return `${formatter.format(startDate)} — ${formatter.format(endDate)} ${yearFormatter.format(endDate)}`;
+}
+
+interface ToggleRowProps {
+  icon: LucideIcon;
+  label: string;
+  description?: string;
+  checked: boolean;
+  onToggle: () => void;
+}
+
+function ToggleRow({ icon: Icon, label, description, checked, onToggle }: ToggleRowProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--bg-subtle)]"
+    >
+      <div
+        className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+        style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
+      >
+        <Icon size={18} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-[14.5px] block" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+          {label}
+        </span>
+        {description && (
+          <span className="text-[12.5px] block mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+            {description}
+          </span>
+        )}
+      </div>
+      <div
+        className="w-11 h-[26px] rounded-full relative transition-colors shrink-0"
+        style={{ background: checked ? "var(--brand)" : "var(--line-strong)" }}
+      >
+        <div
+          className="absolute top-[3px] w-5 h-5 rounded-full bg-white transition-transform"
+          style={{
+            left: checked ? 22 : 3,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+          }}
+        />
+      </div>
+    </button>
+  );
+}
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const { data, logout, updateProfilePreferences, syncStatus } = useAppData();
+  const { data, logout, updateProfilePreferences } = useAppData();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   if (!data) {
@@ -15,191 +124,225 @@ export function ProfilePage() {
 
   const { currentUser, camp, events } = data;
   const teacherEvents = events.filter((event) => event.teacherIds.includes(currentUser.id));
-  const adminShortcuts = [
-    { label: "Создать занятие", path: "/schedule?admin=create-event" },
-    { label: "Создать уведомление", path: "/?admin=create-update" },
-    { label: "Создать пользователя", path: "/people?admin=create-user" },
-    { label: "Создать сторис", path: "/?admin=create-story" },
-    { label: "Добавить материал", path: "/materials?admin=create-material" },
-    { label: "Добавить кампусный блок", path: "/campus?admin=create-campus-category" },
-  ];
 
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
   };
 
+  const roleStyle = ROLE_STYLES[currentUser.role] ?? ROLE_STYLES.participant;
+  const universityAndCity = [currentUser.university, currentUser.city].filter(Boolean).join(" · ");
+
   return (
     <PageShell size="wide">
-      <div className="px-5 pt-5 pb-3">
+      <div className="px-5 pt-5 pb-4">
         <h1 className="text-[var(--text-primary)]">Профиль</h1>
       </div>
 
-      <div className="px-5 pb-8 lg:grid lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)] lg:gap-6">
-        <div className="mb-4 lg:mb-0 lg:col-[1]">
-          <SurfaceCard className="p-5">
-            <div className="flex items-center gap-4">
-              <Avatar name={currentUser.name} size={64} />
-              <div>
-                <h2 className="text-[var(--text-primary)] mb-1">{currentUser.name}</h2>
-                <p className="text-[14px] mb-1.5" style={{ color: "var(--text-secondary)" }}>
-                  {currentUser.university} · {currentUser.city}
-                </p>
-                <RoleBadge role={currentUser.role} />
+      <div className="px-5 pb-8 space-y-6">
+        <SurfaceCard className="overflow-hidden">
+          <div
+            className="px-5 sm:px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+          >
+            <div className="flex items-start gap-4 min-w-0">
+              <Avatar name={currentUser.name} size={72} />
+              <div className="flex-1 min-w-0">
+                <h2
+                  className="text-[22px] leading-tight mb-1"
+                  style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                >
+                  {currentUser.name}
+                </h2>
+                {universityAndCity && (
+                  <p className="text-[14px] mb-2" style={{ color: "var(--text-secondary)" }}>
+                    {universityAndCity}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
+                    style={{ background: roleStyle.bg, color: roleStyle.color, fontWeight: 500 }}
+                  >
+                    {ROLE_LABELS[currentUser.role] ?? currentUser.role}
+                  </span>
+                  {currentUser.email && (
+                    <span className="text-[12.5px]" style={{ color: "var(--text-tertiary)" }}>
+                      {currentUser.email}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </SurfaceCard>
+
+          </div>
+
+          <div
+            className="px-5 sm:px-6 py-4 flex items-center gap-4 border-t"
+            style={{ background: "var(--bg-subtle)", borderColor: "var(--line-subtle)" }}
+          >
+            <div
+              className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+              style={{ background: "var(--brand-soft)", color: "var(--text-primary)" }}
+            >
+              <Sparkles size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] uppercase tracking-wider mb-0.5" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+                Студкемп
+              </p>
+              <p className="text-[14.5px] leading-tight" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                {camp.name}
+              </p>
+              <p
+                className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] mt-1"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} /> {camp.city}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>{camp.university}</span>
+                <span aria-hidden="true">·</span>
+                <span>{formatCampDates(camp.dates.start, camp.dates.end)}</span>
+              </p>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {QUICK_LINKS.map((link) => {
+            const Icon = link.icon;
+            return (
+              <button
+                key={link.path}
+                onClick={() => navigate(link.path)}
+                className="group flex items-center gap-4 p-4 rounded-[var(--radius-lg)] border text-left transition-colors hover:bg-[var(--bg-subtle)]"
+                style={{
+                  background: "var(--bg-card)",
+                  borderColor: "var(--line-subtle)",
+                }}
+              >
+                <div
+                  className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+                  style={
+                    {
+                      background: `color-mix(in srgb, ${link.accent} 14%, transparent)`,
+                      color: link.accent,
+                    } as CSSProperties
+                  }
+                >
+                  <Icon size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                    {link.label}
+                  </p>
+                  <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+                    {link.description}
+                  </p>
+                </div>
+                <ChevronRight
+                  size={18}
+                  style={{ color: "var(--text-tertiary)" }}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            );
+          })}
         </div>
 
-        {currentUser.capabilities.canManageAll && (
-          <div className="mb-4 lg:mb-0 lg:col-[2]">
-            <SurfaceCard className="p-5">
-              <p className="text-[13px] mb-3" style={{ color: "var(--text-tertiary)" }}>Admin tools</p>
-              <div className="grid grid-cols-2 gap-2">
-                {adminShortcuts.map((shortcut) => (
-                  <button
-                    key={shortcut.path}
-                    onClick={() => navigate(shortcut.path)}
-                    className="text-left rounded-[var(--radius-md)] px-3 py-3 border text-[14px]"
-                    style={{ borderColor: "var(--line-subtle)", color: "var(--text-primary)", background: "var(--bg-app)" }}
-                  >
-                    {shortcut.label}
-                  </button>
-                ))}
-              </div>
-            </SurfaceCard>
+        <SurfaceCard className="overflow-hidden">
+          <div className="px-5 sm:px-6 pt-5 pb-2">
+            <p
+              className="text-[11px] uppercase tracking-wider"
+              style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+            >
+              Настройки
+            </p>
           </div>
-        )}
+          <ToggleRow
+            icon={Shield}
+            label="Видимость профиля"
+            description={currentUser.visibility === "name_only" ? "Только ФИО" : "ФИО + контакты и вуз"}
+            checked={currentUser.visibility === "name_plus_fields"}
+            onToggle={() =>
+              void updateProfilePreferences({
+                visibilityMode: currentUser.visibility === "name_only" ? "name_plus_fields" : "name_only",
+              })
+            }
+          />
+          <div className="h-px mx-5 sm:mx-6" style={{ background: "var(--line-subtle)" }} />
+          <ToggleRow
+            icon={Bell}
+            label="Уведомления"
+            description={currentUser.notificationsOn ? "Сторис и важные обновления" : "Отключены"}
+            checked={currentUser.notificationsOn}
+            onToggle={() =>
+              void updateProfilePreferences({
+                notificationsOn: !currentUser.notificationsOn,
+              })
+            }
+          />
+        </SurfaceCard>
 
-        {currentUser.capabilities.canEditOwnEvents && (
-          <div className="mb-4 lg:mb-0 lg:col-[2]">
-            <SurfaceCard className="p-5">
-              <p className="text-[13px] mb-3" style={{ color: "var(--text-tertiary)" }}>Мои занятия</p>
-              <div className="space-y-2">
-                {teacherEvents.length > 0 ? (
-                  teacherEvents.map((event) => (
+        {currentUser.capabilities.canManageAll ? (
+          <MagicBlock />
+        ) : (
+          currentUser.capabilities.canEditOwnEvents && (
+            <SurfaceCard className="p-5 sm:p-6">
+              <p
+                className="text-[11px] uppercase tracking-wider mb-3"
+                style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+              >
+                Мои занятия
+              </p>
+              {teacherEvents.length === 0 ? (
+                <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
+                  Пока не привязано ни одного занятия.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {teacherEvents.map((event) => (
                     <button
                       key={event.id}
                       onClick={() => navigate(`/schedule?event=${event.id}`)}
-                      className="w-full text-left rounded-[var(--radius-md)] px-3 py-3 border"
-                      style={{ borderColor: "var(--line-subtle)", color: "var(--text-primary)", background: "var(--bg-app)" }}
+                      className="w-full text-left rounded-[var(--radius-md)] px-4 py-3 border transition-colors hover:bg-[var(--bg-subtle)]"
+                      style={{ borderColor: "var(--line-subtle)", background: "var(--bg-card)" }}
                     >
-                      <p className="text-[14px]" style={{ fontWeight: 500 }}>{event.title}</p>
-                      <p className="text-[12px]" style={{ color: "var(--text-secondary)" }}>
+                      <p className="text-[14.5px]" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                        {event.title}
+                      </p>
+                      <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
                         {event.date} · {event.startAt}–{event.endAt}
                       </p>
                     </button>
-                  ))
-                ) : (
-                  <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
-                    Для этого преподавателя пока не привязано ни одного занятия.
-                  </p>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </SurfaceCard>
-          </div>
+          )
         )}
 
-        <div className="mb-4 lg:mb-0 lg:col-[1]">
-          <SurfaceCard className="p-5">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div>
-                <p className="text-[13px] mb-1" style={{ color: "var(--text-tertiary)" }}>Текущий студкемп</p>
-                <p className="text-[16px] mb-0.5" style={{ color: "var(--text-primary)", fontWeight: 500 }}>{camp.name}</p>
-                <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
-                  {camp.city} · {camp.university}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-[13px]" style={{ color: syncStatus === "stale" ? "var(--warning)" : "var(--text-tertiary)" }}>
-                <RefreshCw size={14} className={syncStatus === "syncing" ? "animate-spin" : ""} />
-                {syncStatus === "fresh" ? "Синхронизировано" : syncStatus === "stale" ? "Кэш без связи" : "Готово"}
-              </div>
-            </div>
-          </SurfaceCard>
-        </div>
-
-        <div className="mb-4 lg:mb-0 lg:col-[2]">
-          <SurfaceCard className="divide-y" style={{ borderColor: "var(--line-subtle)" }}>
-            {[
-              { icon: CreditCard, label: "Бейдж участника", path: "/profile/badge" },
-              { icon: FileText, label: "Мои документы", path: "/documents" },
-              { icon: FolderOpen, label: "Материалы", path: "/materials" },
-              { icon: Building2, label: "Кампус и проживание", path: "/campus" },
-            ].map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="w-full flex items-center gap-3 px-5 py-4 text-left min-h-[52px]"
-              >
-                <item.icon size={19} style={{ color: "var(--text-tertiary)" }} />
-                <span className="flex-1 text-[15px]" style={{ color: "var(--text-primary)" }}>{item.label}</span>
-                <ChevronRight size={17} style={{ color: "var(--text-tertiary)" }} />
-              </button>
-            ))}
-
-            <button
-              onClick={() =>
-                void updateProfilePreferences({
-                  visibilityMode: currentUser.visibility === "name_only" ? "name_plus_fields" : "name_only",
-                })
-              }
-              className="w-full flex items-center gap-3 px-5 py-4 text-left min-h-[52px]"
-            >
-              <Shield size={19} style={{ color: "var(--text-tertiary)" }} />
-              <div className="flex-1">
-                <span className="text-[15px] block" style={{ color: "var(--text-primary)" }}>Видимость профиля</span>
-                <span className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
-                  {currentUser.visibility === "name_only" ? "Только ФИО" : "ФИО + детали"}
-                </span>
-              </div>
-              <div
-                className="w-11 h-[26px] rounded-full relative transition-colors shrink-0"
-                style={{ background: currentUser.visibility === "name_plus_fields" ? "var(--brand)" : "var(--line-strong)" }}
-              >
-                <div
-                  className="absolute top-[3px] w-5 h-5 rounded-full bg-white shadow transition-transform"
-                  style={{ left: currentUser.visibility === "name_plus_fields" ? 22 : 3 }}
-                />
-              </div>
-            </button>
-
-            <button
-              onClick={() =>
-                void updateProfilePreferences({
-                  notificationsOn: !currentUser.notificationsOn,
-                })
-              }
-              className="w-full flex items-center gap-3 px-5 py-4 text-left min-h-[52px]"
-            >
-              <Bell size={19} style={{ color: "var(--text-tertiary)" }} />
-              <span className="flex-1 text-[15px]" style={{ color: "var(--text-primary)" }}>Уведомления</span>
-              <div
-                className="w-11 h-[26px] rounded-full relative transition-colors"
-                style={{ background: currentUser.notificationsOn ? "var(--brand)" : "var(--line-strong)" }}
-              >
-                <div
-                  className="absolute top-[3px] w-5 h-5 rounded-full bg-white shadow transition-transform"
-                  style={{ left: currentUser.notificationsOn ? 22 : 3 }}
-                />
-              </div>
-            </button>
-          </SurfaceCard>
-        </div>
-
-        <div className="lg:col-[1] lg:self-start">
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)] text-[15px] border"
-            style={{ color: "var(--danger)", borderColor: "var(--line-subtle)", background: "var(--bg-card)" }}
-          >
-            <LogOut size={17} /> Выйти
-          </button>
-        </div>
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[var(--radius-md)] text-[15px] border transition-colors hover:bg-[var(--danger-soft)]"
+          style={{ color: "var(--danger)", borderColor: "var(--line-subtle)", background: "var(--bg-card)", fontWeight: 500 }}
+        >
+          <LogOut size={17} /> Выйти из аккаунта
+        </button>
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-6" style={{ background: "rgba(0,0,0,0.25)" }} onClick={() => setShowLogoutConfirm(false)}>
-          <div className="rounded-[var(--radius-xl)] p-6 w-full max-w-sm" style={{ background: "var(--bg-card)" }} onClick={(event) => event.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+          style={{ background: "rgba(0,0,0,0.35)" }}
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="rounded-[var(--radius-xl)] p-6 w-full max-w-sm"
+            style={{ background: "var(--bg-card)", boxShadow: "var(--shadow-floating)" }}
+            onClick={(event) => event.stopPropagation()}
+          >
             <h3 className="text-[var(--text-primary)] text-center mb-2">Выйти из аккаунта?</h3>
             <p className="text-[14px] text-center mb-6" style={{ color: "var(--text-secondary)" }}>
               Кэшированные данные останутся на устройстве до следующей синхронизации.
@@ -215,7 +358,7 @@ export function ProfilePage() {
               <button
                 onClick={() => void handleLogout()}
                 className="flex-1 py-3 rounded-[var(--radius-md)] text-[15px]"
-                style={{ background: "var(--danger)", color: "var(--text-inverted)" }}
+                style={{ background: "var(--danger)", color: "var(--text-inverted)", fontWeight: 500 }}
               >
                 Выйти
               </button>

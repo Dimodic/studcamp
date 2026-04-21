@@ -10,7 +10,8 @@ export type AdminEntityKind =
   | "resource"
   | "campusCategory"
   | "roomAssignment"
-  | "document";
+  | "document"
+  | "camp";
 
 export interface AdminOption {
   id: string;
@@ -28,6 +29,7 @@ export const ADMIN_PATHS: Record<AdminEntityKind, AdminResourcePath> = {
   campusCategory: "campus-categories",
   roomAssignment: "room-assignments",
   document: "documents",
+  camp: "camp",
 };
 
 export const ENTITY_NOUN: Record<AdminEntityKind, string> = {
@@ -41,6 +43,7 @@ export const ENTITY_NOUN: Record<AdminEntityKind, string> = {
   campusCategory: "раздел кампуса",
   roomAssignment: "заселение",
   document: "документ",
+  camp: "кемп",
 };
 
 export function editorTitle(kind: AdminEntityKind, mode: "create" | "edit"): string {

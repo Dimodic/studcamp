@@ -78,3 +78,21 @@ def update_resource(
     db.add(resource)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{resource_id}", response_model=SimpleStatusSchema)
+def delete_resource(
+    resource_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    resource = get_or_404(db, Resource, resource_id)
+    if current_user.role == UserRole.organizer:
+        pass
+    elif current_user.role == UserRole.teacher:
+        ensure_manageable_related_event_id(db, current_user, resource.event_id)
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    db.delete(resource)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

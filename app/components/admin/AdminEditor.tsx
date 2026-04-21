@@ -5,6 +5,7 @@ import type {
   AdminDocument,
   AdminRoomAssignment,
   AdminUser,
+  Camp,
   CampusCategory,
   Event,
   Material,
@@ -54,6 +55,12 @@ import {
   serializeDocument,
   type DocumentFormState,
 } from "./forms/DocumentForm";
+import {
+  buildCampInitial,
+  CampForm,
+  serializeCamp,
+  type CampFormState,
+} from "./forms/CampForm";
 import type { AdminEntityKind, AdminOption } from "./paths";
 import { editorTitle } from "./paths";
 
@@ -68,7 +75,8 @@ type AdminEntity =
   | Resource
   | CampusCategory
   | AdminRoomAssignment
-  | AdminDocument;
+  | AdminDocument
+  | Camp;
 
 type FormState =
   | StoryFormState
@@ -80,7 +88,8 @@ type FormState =
   | ResourceFormState
   | CampusCategoryFormState
   | RoomAssignmentFormState
-  | DocumentFormState;
+  | DocumentFormState
+  | CampFormState;
 
 interface AdminEditorModalProps {
   open: boolean;
@@ -124,6 +133,8 @@ function buildInitialState(
       return buildRoomAssignmentInitial(typed as Partial<AdminRoomAssignment> | undefined);
     case "document":
       return buildDocumentInitial(typed as Partial<AdminDocument> | undefined);
+    case "camp":
+      return buildCampInitial(typed as Partial<Camp> | undefined);
   }
 }
 
@@ -149,6 +160,8 @@ function serializeFormState(kind: AdminEntityKind, state: FormState): unknown {
       return serializeRoomAssignment(state as RoomAssignmentFormState);
     case "document":
       return serializeDocument(state as DocumentFormState);
+    case "camp":
+      return serializeCamp(state as CampFormState);
   }
 }
 
@@ -260,6 +273,7 @@ export function AdminEditorModal({
           {kind === "document" && (
             <DocumentForm state={state as DocumentFormState} onChange={setState} userOptions={userOptions} />
           )}
+          {kind === "camp" && <CampForm state={state as CampFormState} onChange={setState} />}
 
           {error && (
             <p className="text-[13px]" style={{ color: "var(--danger)" }}>

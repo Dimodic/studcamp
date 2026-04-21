@@ -68,7 +68,7 @@ export function UserForm({ state, onChange, mode }: UserFormProps) {
         onChange={(value) => onChange({ ...state, role: value as UserRole })}
         options={ROLE_OPTIONS}
       />
-      <TextField label="Вуз / компания" value={state.university} onChange={(value) => onChange({ ...state, university: value })} />
+      <TextField label="ВУЗ / компания" value={state.university} onChange={(value) => onChange({ ...state, university: value })} />
       <TextField label="Город" value={state.city} onChange={(value) => onChange({ ...state, city: value })} />
       <TextField label="Telegram" value={state.telegram} onChange={(value) => onChange({ ...state, telegram: value })} />
       <TextField label="Фото URL" value={state.photo} onChange={(value) => onChange({ ...state, photo: value })} />

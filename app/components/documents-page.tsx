@@ -1,8 +1,15 @@
 import { useNavigate } from "react-router";
 import { Check, Loader2, AlertTriangle, Circle, AlertCircle, Copy, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
+import {
+  AdminEditorModal,
+  ADMIN_PATHS,
+  ActionIconButton,
+  type AdminEntityKind,
+} from "./admin-ui";
+import type { AdminDocument, DocItem } from "../lib/domain";
 
 const STATUS_MAP = {
   done: { label: "Готово", icon: Check, color: "var(--success)", bg: "var(--success-soft)" },
@@ -13,16 +20,32 @@ const STATUS_MAP = {
 
 export function DocumentsPage() {
   const navigate = useNavigate();
-  const { data } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [adminState, setAdminState] = useState<{
+    kind: AdminEntityKind;
+    mode: "create" | "edit";
+    entity?: unknown;
+  } | null>(null);
+
+  const userOptions = useMemo(() => {
+    if (!data) return [];
+    const source = data.adminUsers.length > 0 ? data.adminUsers : data.people;
+    return source.map((person) => ({ id: person.id, label: person.name }));
+  }, [data]);
 
   if (!data) {
     return null;
   }
 
-  const { documents } = data;
-  const done = documents.filter(d => d.status === "done").length;
-  const total = documents.length;
+  const { documents, adminDocuments, currentUser } = data;
+  const canManage = currentUser.capabilities.canManageDocuments;
+  const rows: Array<DocItem | AdminDocument> = canManage ? adminDocuments : documents;
+  const done = rows.filter((d) => d.status === "done").length;
+  const total = rows.length;
+  const userNameById = new Map(
+    (data.adminUsers.length > 0 ? data.adminUsers : data.people).map((person) => [person.id, person.name]),
+  );
 
   const copyEmail = (id: string) => {
     navigator.clipboard?.writeText("camp-docs@yandex.ru");
@@ -35,10 +58,19 @@ export function DocumentsPage() {
       <PageShell size="wide">
         <div className="px-5 pt-5 pb-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1" style={{ color: "var(--text-secondary)" }}><ArrowLeft size={22} /></button>
-          <h1 className="text-[var(--text-primary)]">Документы</h1>
+          <h1 className="flex-1 text-[var(--text-primary)]">Документы</h1>
+          {canManage && (
+            <ActionIconButton
+              kind="plus"
+              label="Создать документ"
+              onClick={(event) => {
+                event.preventDefault();
+                setAdminState({ kind: "document", mode: "create" });
+              }}
+            />
+          )}
         </div>
 
-        {/* Progress */}
         <div className="px-5 mb-4">
           <SurfaceCard className="p-5">
             <div className="flex items-center justify-between mb-2">
@@ -46,9 +78,12 @@ export function DocumentsPage() {
               <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>{done}/{total}</p>
             </div>
             <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-subtle)" }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${(done / total) * 100}%`, background: "var(--success)" }} />
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: total > 0 ? `${(done / total) * 100}%` : "0%", background: "var(--success)" }}
+              />
             </div>
-            {documents.some(d => d.status === "blocked") && (
+            {rows.some((d) => d.status === "blocked") && (
               <div className="flex items-center gap-1.5 mt-3 text-[13px]" style={{ color: "var(--danger)" }}>
                 <AlertCircle size={14} /> Есть проблемы, требующие внимания
               </div>
@@ -56,11 +91,19 @@ export function DocumentsPage() {
           </SurfaceCard>
         </div>
 
-        {/* Document list */}
         <div className="px-5 pb-8 space-y-3">
-          {documents.map(doc => {
+          {rows.length === 0 && (
+            <SurfaceCard className="p-6 text-center">
+              <p className="text-[14px]" style={{ color: "var(--text-tertiary)" }}>
+                {canManage ? "Пока нет документов. Создайте первый — «+» справа сверху." : "Пока нет документов."}
+              </p>
+            </SurfaceCard>
+          )}
+          {rows.map((doc) => {
             const s = STATUS_MAP[doc.status];
             const Icon = s.icon;
+            const ownerName =
+              canManage && "userId" in doc ? userNameById.get((doc as AdminDocument).userId) : null;
             return (
               <SurfaceCard key={doc.id} className={`p-4 ${doc.status === "blocked" ? "border-[var(--danger)]/20" : ""}`}>
                 <div className="flex items-start gap-3">
@@ -74,6 +117,11 @@ export function DocumentsPage() {
                         <span className="text-[11px] px-1.5 py-0.5 rounded-[var(--radius-sm)]" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>!</span>
                       )}
                     </div>
+                    {ownerName && (
+                      <p className="text-[12px] mb-1" style={{ color: "var(--text-tertiary)" }}>
+                        {ownerName}
+                      </p>
+                    )}
                     <p className="text-[13px] mb-1" style={{ color: "var(--text-secondary)" }}>{doc.description}</p>
                     {doc.deadline && (
                       <p className="text-[13px]" style={{ color: "var(--warning)" }}>Дедлайн: {doc.deadline}</p>
@@ -92,11 +140,51 @@ export function DocumentsPage() {
                       </div>
                     )}
                   </div>
+                  {canManage && (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <ActionIconButton
+                        kind="edit"
+                        label="Редактировать документ"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setAdminState({ kind: "document", mode: "edit", entity: doc });
+                        }}
+                      />
+                      <ActionIconButton
+                        kind="delete"
+                        label="Удалить документ"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (window.confirm(`Удалить документ «${doc.title}»?`)) {
+                            void deleteAdminEntity("documents", doc.id);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </SurfaceCard>
             );
           })}
         </div>
+
+        <AdminEditorModal
+          open={adminState !== null}
+          kind={adminState?.kind ?? null}
+          mode={adminState?.mode ?? "create"}
+          entity={adminState?.entity}
+          userOptions={userOptions}
+          onClose={() => setAdminState(null)}
+          onSubmit={async (payload) => {
+            if (!adminState) return;
+            const resource = ADMIN_PATHS[adminState.kind];
+            if (adminState.mode === "create") {
+              await createAdminEntity(resource, payload);
+              return;
+            }
+            await updateAdminEntity(resource, (adminState.entity as { id: string }).id, payload);
+          }}
+        />
       </PageShell>
     </div>
   );

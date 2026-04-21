@@ -1,7 +1,7 @@
 import type { Event, EventStatus } from "../../../lib/domain";
 import { EVENT_STATUS_OPTIONS } from "../../../lib/options";
 import type { AdminOption } from "../paths";
-import { joinLines, splitCsvOrLines, todayIso, toNumberOrFallback } from "../serializers";
+import { joinLines, splitCsvOrLines, todayIso } from "../serializers";
 import { FieldLabel, SelectField, TextField } from "../form-primitives";
 
 export interface EventFormState {
@@ -16,7 +16,6 @@ export interface EventFormState {
   status: EventStatus;
   description: string;
   materialsText: string;
-  day: number | string;
   teacherIds: string[];
 }
 
@@ -37,7 +36,6 @@ export function buildEventInitial(
     status: (base.status as EventStatus | undefined) ?? "upcoming",
     description: base.description ?? "",
     materialsText: joinLines(entity?.materials),
-    day: base.day ?? 1,
     teacherIds: base.teacherIds ?? [],
   };
 }
@@ -55,7 +53,6 @@ export function serializeEvent(state: EventFormState) {
     status: state.status,
     description: state.description || null,
     materials: splitCsvOrLines(state.materialsText),
-    day: toNumberOrFallback(state.day, 1),
     teacherIds: state.teacherIds,
   };
 }
@@ -104,7 +101,6 @@ export function EventForm({ state, onChange, allowTeacherAssignment = false, tea
         onChange={(value) => onChange({ ...state, materialsText: value })}
         placeholder="по одному на строку"
       />
-      <TextField label="День" type="number" value={state.day} onChange={(value) => onChange({ ...state, day: value })} />
       {allowTeacherAssignment && (
         <div>
           <FieldLabel>Преподаватели</FieldLabel>

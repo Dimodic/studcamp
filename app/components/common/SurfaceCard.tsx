@@ -16,14 +16,18 @@ export function SurfaceCard({ children, className = "", onClick, style }: Surfac
     }
   };
 
+  const interactiveClasses = onClick
+    ? "cursor-pointer hover:border-[var(--line-strong)] hover:-translate-y-[1px] active:translate-y-0"
+    : "";
+
   return (
     <div
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKey : undefined}
-      className={`bg-[var(--bg-card)] rounded-[var(--radius-lg)] border border-[var(--line-subtle)] text-left w-full ${onClick ? "cursor-pointer" : ""} ${className}`}
-      style={{ boxShadow: "var(--shadow-card)", ...style }}
+      className={`bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--line-subtle)] text-left w-full transition-[transform,border-color,background-color] duration-150 ${interactiveClasses} ${className}`}
+      style={style}
     >
       {children}
     </div>

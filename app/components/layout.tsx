@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
-import { PanelLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import logoImg from "../assets/logo.png";
 import { useIsMobile } from "../hooks/useMobile";
 import {
   getActivePrimaryPath,
@@ -8,8 +9,8 @@ import {
   navigationItems,
 } from "../lib/navigation";
 
-const COLLAPSED_WIDTH = "4rem";
-const EXPANDED_WIDTH = "15rem";
+const COLLAPSED_WIDTH = "4.5rem";
+const EXPANDED_WIDTH = "16rem";
 
 export function Layout() {
   const location = useLocation();
@@ -23,12 +24,12 @@ export function Layout() {
 
   return (
     <div
-      className="min-h-dvh flex"
-      style={{ background: "var(--bg-app)", fontFamily: "'Inter', system-ui, sans-serif" }}
+      className="h-dvh flex overflow-hidden"
+      style={{ background: "var(--bg-app)", fontFamily: "var(--font-ui)" }}
     >
       {!isMobile && (
         <aside
-          className="hidden md:flex md:flex-col border-r shrink-0 transition-[width] duration-200"
+          className="hidden md:flex md:flex-col shrink-0 transition-[width] duration-200 border-r"
           style={{
             width: sidebarWidth,
             borderColor: "var(--line-subtle)",
@@ -36,39 +37,44 @@ export function Layout() {
           }}
         >
           <div
-            className="flex h-14 items-center border-b px-3"
-            style={{ borderColor: "var(--line-subtle)" }}
+            className={`h-16 flex items-center shrink-0 ${collapsed ? "justify-center px-2" : "justify-between pl-5 pr-3"}`}
           >
-            <div className="flex items-center gap-3 px-2">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-[10px] shrink-0"
-                style={{ background: "var(--brand-soft)", color: "var(--brand-contrast)" }}
-              >
-                <PanelLeft size={16} />
-              </div>
-              {!collapsed && (
-                <div className="min-w-0">
-                  <p className="text-[14px] truncate" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                    Studcamp
-                  </p>
-                  <p className="text-[12px] truncate" style={{ color: "var(--text-tertiary)" }}>
-                    Desktop navigation
-                  </p>
+            {!collapsed && (
+              <Link to="/" className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={logoImg}
+                  alt="Яндекс Образование"
+                  className="h-8 w-8 rounded-[10px] object-cover shrink-0"
+                />
+                <div className="min-w-0 flex flex-col">
+                  <span
+                    className="text-[14.5px] leading-tight truncate"
+                    style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                  >
+                    Яндекс
+                  </span>
+                  <span
+                    className="text-[12px] leading-tight truncate"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Образование
+                  </span>
                 </div>
-              )}
-            </div>
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setCollapsed((value) => !value)}
+              aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
+              className="h-9 w-9 flex items-center justify-center rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--bg-subtle)] shrink-0"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
           </div>
 
-          <nav className="flex-1 overflow-y-auto px-2 py-3">
-            {!collapsed && (
-              <p
-                className="px-3 pb-1.5 text-[11px] uppercase tracking-wide"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Навигация
-              </p>
-            )}
-            <ul className="space-y-1">
+          <nav className="flex-1 overflow-y-auto px-3 py-2">
+            <ul className="space-y-0.5">
               {navigationItems.map((item) => {
                 const active = activePrimaryPath === item.path;
                 return (
@@ -76,57 +82,34 @@ export function Layout() {
                     <Link
                       to={item.path}
                       title={collapsed ? item.label : undefined}
-                      className="flex h-11 items-center gap-3 rounded-[var(--radius-md)] px-3 transition-colors"
+                      className={`relative flex h-11 items-center rounded-[var(--radius-md)] transition-colors ${collapsed ? "justify-center" : "gap-3 px-3"}`}
                       style={{
-                        background: active ? "var(--bg-subtle)" : "transparent",
+                        background: active ? "var(--accent-peach)" : "transparent",
                         color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                        fontWeight: active ? 600 : 400,
+                        fontWeight: active ? 600 : 500,
                       }}
                     >
-                      <item.icon size={18} className="shrink-0" />
-                      {!collapsed && <span className="text-[14px] truncate">{item.label}</span>}
+                      <item.icon
+                        size={20}
+                        strokeWidth={active ? 2.2 : 1.8}
+                        className="shrink-0"
+                        style={{ color: active ? "var(--text-primary)" : "var(--text-secondary)" }}
+                      />
+                      {!collapsed && <span className="text-[14.5px] truncate">{item.label}</span>}
                     </Link>
                   </li>
                 );
               })}
             </ul>
           </nav>
-
-          {!collapsed && (
-            <div className="px-3 pb-3">
-              <p
-                className="rounded-[var(--radius-md)] px-3 py-2 text-[12px]"
-                style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
-              >
-                Mobile keeps the bottom tabs. Desktop switches to the left menu.
-              </p>
-            </div>
-          )}
         </aside>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        {!isMobile && (
-          <header
-            className="flex h-14 items-center border-b px-4 lg:px-6"
-            style={{ background: "var(--bg-app)", borderColor: "var(--line-subtle)" }}
-          >
-            <button
-              type="button"
-              onClick={() => setCollapsed((value) => !value)}
-              aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
-              className="h-9 w-9 flex items-center justify-center rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--bg-subtle)]"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <PanelLeft size={18} />
-            </button>
-          </header>
-        )}
-
-        <main className={`flex-1 overflow-y-auto ${showMobileBottomNav ? "pb-20" : ""}`}>
-          <Outlet />
-        </main>
-      </div>
+      <main
+        className={`flex-1 overflow-y-auto min-w-0 ${showMobileBottomNav ? "pb-20" : ""}`}
+      >
+        <Outlet />
+      </main>
 
       {showMobileBottomNav && (
         <nav
@@ -146,7 +129,7 @@ export function Layout() {
                   {active && (
                     <span
                       className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-b-full"
-                      style={{ background: "var(--brand)" }}
+                      style={{ background: "var(--text-primary)" }}
                     />
                   )}
                   <item.icon size={22} strokeWidth={active ? 2.2 : 1.6} />

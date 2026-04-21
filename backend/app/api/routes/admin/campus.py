@@ -47,3 +47,16 @@ def update_campus_category(
     db.add(category)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{category_id}", response_model=SimpleStatusSchema)
+def delete_campus_category(
+    category_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    category = get_or_404(db, CampusCategory, category_id)
+    db.delete(category)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

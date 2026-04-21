@@ -186,9 +186,16 @@ class Project(TimestampMixin, Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     short_description: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     direction: Mapped[str] = mapped_column(String(128), nullable=False)
     min_team: Mapped[int] = mapped_column(Integer, nullable=False)
     max_team: Mapped[int] = mapped_column(Integer, nullable=False)
+    mentor_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    mentor_position: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    mentor_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    mentor_telegram: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    mentor_photo: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    mentor_work_format: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     preferences: Mapped[list["ProjectPreference"]] = relationship(back_populates="project", cascade="all, delete-orphan")
 

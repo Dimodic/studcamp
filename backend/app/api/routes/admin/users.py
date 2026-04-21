@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user
@@ -76,5 +76,20 @@ def update_user(
     if payload.password:
         user.password_salt, user.password_hash = hash_password(payload.password)
     db.add(user)
+    db.commit()
+    return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{user_id}", response_model=SimpleStatusSchema)
+def delete_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Нельзя удалить самого себя")
+    user = get_or_404(db, User, user_id)
+    db.delete(user)
     db.commit()
     return SimpleStatusSchema(ok=True)

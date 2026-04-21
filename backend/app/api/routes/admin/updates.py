@@ -48,3 +48,16 @@ def update_org_update(
     db.add(update)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{update_id}", response_model=SimpleStatusSchema)
+def delete_org_update(
+    update_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    update = get_or_404(db, OrgUpdate, update_id)
+    db.delete(update)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

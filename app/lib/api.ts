@@ -161,4 +161,30 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+  deleteAdminEntity(token: string, resource: AdminResourcePath, entityId: string) {
+    return request<{ ok: boolean }>(`/admin/${resource}/${entityId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  parseLlmContent(
+    token: string,
+    payload: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      text: string;
+      attachments: Array<{ name: string; mimeType: string; base64: string }>;
+    },
+  ) {
+    return request<{ items: Array<{ kind: string; payload: Record<string, unknown> }> }>(`/llm/parse`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  },
 };

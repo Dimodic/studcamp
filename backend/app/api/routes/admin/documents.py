@@ -60,3 +60,16 @@ def update_document(
     db.add(document)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{document_id}", response_model=SimpleStatusSchema)
+def delete_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    document = get_or_404(db, Document, document_id)
+    db.delete(document)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

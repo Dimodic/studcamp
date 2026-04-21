@@ -1,36 +1,102 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   AlertTriangle,
+  BookOpen,
   CalendarDays,
   Check,
   CheckCircle2,
-  Clock,
+  CheckSquare,
+  Download,
   ExternalLink,
+  File,
+  FileText,
   FolderOpen,
   Laptop,
   Link2,
   MapPin,
   Navigation,
+  Video,
+  type LucideIcon,
 } from "lucide-react";
-import { PageShell, StatusBadge, SurfaceCard } from "./common";
+import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
+import type { Event } from "../lib/domain";
+import { splitEventTitle } from "../lib/events";
+import { MATERIAL_TYPE_LABELS } from "../lib/options";
 
-function formatDate(value?: string | null) {
+const MATERIAL_TYPE_ACCENT: Record<string, string> = {
+  presentation: "var(--accent-blue)",
+  recording: "var(--accent-pink)",
+  guide: "var(--accent-violet)",
+  checklist: "var(--accent-teal)",
+  org_doc: "var(--text-secondary)",
+};
+
+const ATTACHMENT_ICONS: Record<string, LucideIcon> = {
+  presentation: FileText,
+  recording: Video,
+  guide: BookOpen,
+  checklist: CheckSquare,
+  org_doc: File,
+};
+
+const RESOURCE_KIND_LABELS: Record<string, string> = {
+  doc: "Документ",
+  sheet: "Таблица",
+  form: "Форма",
+  folder: "Папка",
+  calendar: "Календарь",
+  gallery: "Галерея",
+  map: "Карта",
+  repo: "Репозиторий",
+  guide: "Гайд",
+};
+
+function parseDate(value?: string | null): Date | null {
   if (!value) {
-    return "Дата уточняется";
+    return null;
   }
-
   const parsed = new Date(`${value}T00:00:00`);
-  if (!Number.isFinite(parsed.getTime())) {
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+}
+
+function formatDayHeader(value?: string | null): string {
+  const parsed = parseDate(value);
+  if (!parsed) {
     return "Дата уточняется";
   }
-
   return new Intl.DateTimeFormat("ru-RU", {
+    weekday: "long",
     day: "numeric",
     month: "long",
-  }).format(parsed);
+  })
+    .format(parsed)
+    .toUpperCase();
+}
+
+interface DateParts {
+  dayNumber: string;
+  weekday: string;
+  month: string;
+}
+
+function extractDateParts(value?: string | null): DateParts {
+  const parsed = parseDate(value);
+  if (!parsed) {
+    return { dayNumber: "—", weekday: "", month: "" };
+  }
+  const dayNumber = new Intl.DateTimeFormat("ru-RU", { day: "numeric" }).format(parsed);
+  const weekday = new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(parsed);
+  const month = new Intl.DateTimeFormat("ru-RU", { month: "short" })
+    .format(parsed)
+    .replace(/\.$/, "");
+  return {
+    dayNumber,
+    weekday: weekday.charAt(0).toUpperCase() + weekday.slice(1),
+    month,
+  };
 }
 
 function openExternal(url: string) {
@@ -41,7 +107,6 @@ function AttendanceBadge({ attendance }: { attendance?: "confirmed" | "pending" 
   if (!attendance || attendance === "not_checked") {
     return null;
   }
-
   if (attendance === "confirmed") {
     return (
       <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--success)" }}>
@@ -49,7 +114,6 @@ function AttendanceBadge({ attendance }: { attendance?: "confirmed" | "pending" 
       </span>
     );
   }
-
   return (
     <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--warning)" }}>
       <AlertTriangle size={13} /> Проверяется
@@ -57,30 +121,51 @@ function AttendanceBadge({ attendance }: { attendance?: "confirmed" | "pending" 
   );
 }
 
+interface EventGroup {
+  day: number;
+  date: string;
+  theme: string | null;
+  events: Event[];
+}
+
+function extractDayTheme(events: Event[]): string | null {
+  if (events.length === 0) return null;
+  const first = (events[0].description ?? "").trim();
+  if (!first || first.length > 60) return null;
+  const allSame = events.every((event) => (event.description ?? "").trim() === first);
+  return allSame ? first : null;
+}
+
+function groupEventsByDay(events: Event[]): EventGroup[] {
+  const groups = new Map<number, { day: number; date: string; events: Event[] }>();
+  for (const event of events) {
+    const existing = groups.get(event.day);
+    if (existing) {
+      existing.events.push(event);
+    } else {
+      groups.set(event.day, { day: event.day, date: event.date, events: [event] });
+    }
+  }
+  return [...groups.values()]
+    .sort((left, right) => left.day - right.day)
+    .map((group) => ({ ...group, theme: extractDayTheme(group.events) }));
+}
+
 export function SchedulePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, checkInEvent, createAdminEntity, updateAdminEntity } = useAppData();
+  const { data, checkInEvent, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [activeDay, setActiveDay] = useState(1);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
     mode: "create" | "edit";
     entity?: unknown;
     defaults?: Record<string, unknown>;
   } | null>(null);
-  const days = useMemo(
-    () => (data ? [...new Set(data.events.map((event) => event.day))].sort((left, right) => left - right) : []),
-    [data],
-  );
+  const dayRefs = useRef(new Map<number, HTMLElement>());
+  const didInitialScroll = useRef(false);
 
-  useEffect(() => {
-    if (!data || days.length === 0) {
-      return;
-    }
-    const preferredDay = days.includes(data.ui.currentDay) ? data.ui.currentDay : days[0];
-    setActiveDay(preferredDay);
-  }, [data, days]);
+  const groups = useMemo(() => (data ? groupEventsByDay(data.events) : []), [data]);
 
   useEffect(() => {
     if (!data) {
@@ -93,8 +178,9 @@ export function SchedulePage() {
     if (eventId) {
       const target = data.events.find((event) => event.id === eventId);
       if (target) {
-        setActiveDay(target.day);
         setExpanded(target.id);
+        const node = dayRefs.current.get(target.day);
+        node?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
       navigate("/schedule", { replace: true });
       return;
@@ -106,27 +192,31 @@ export function SchedulePage() {
     }
   }, [data, location.search, navigate]);
 
+  useEffect(() => {
+    if (!data || didInitialScroll.current || groups.length === 0) {
+      return;
+    }
+    const today = data.ui.currentDay;
+    const target = groups.find((group) => group.day === today) ?? groups[0];
+    const node = dayRefs.current.get(target.day);
+    if (node) {
+      node.scrollIntoView({ block: "start" });
+      didInitialScroll.current = true;
+    }
+  }, [data, groups]);
+
   if (!data) {
     return null;
   }
 
-  const { events, materials, resources, currentUser } = data;
+  const { materials, resources, currentUser, ui } = data;
   const teacherOptions = (data.adminUsers.length > 0 ? data.adminUsers : data.people)
     .filter((person) => person.role === "teacher")
     .map((person) => ({ id: person.id, label: person.name }));
-  const manageableEventOptions = (currentUser.capabilities.canEditAllEvents ? events : events.filter((event) => event.teacherIds.includes(currentUser.id)))
-    .map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
-
-  const dayEvents = events.filter((event) => event.day === activeDay);
-  const dayDate = dayEvents[0]?.date;
-  const selectedEvent = dayEvents.find((event) => event.id === expanded)
-    ?? dayEvents.find((event) => event.status === "in_progress")
-    ?? dayEvents[0]
-    ?? null;
-  const selectedEventMaterials = selectedEvent ? materials.filter((material) => material.eventId === selectedEvent.id) : [];
-  const selectedEventResources = selectedEvent ? resources.filter((resource) => resource.eventId === selectedEvent.id) : [];
-  const inProgressCount = dayEvents.filter((event) => event.status === "in_progress").length;
-  const completedCount = dayEvents.filter((event) => event.status === "completed").length;
+  const manageableEventOptions = (currentUser.capabilities.canEditAllEvents
+    ? data.events
+    : data.events.filter((event) => event.teacherIds.includes(currentUser.id))
+  ).map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
 
   return (
     <div className="min-h-full" style={{ background: "var(--bg-card)" }}>
@@ -135,11 +225,9 @@ export function SchedulePage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-[var(--text-primary)]">Расписание</h1>
-              {dayDate && (
-                <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
-                  <CalendarDays size={14} /> {formatDate(dayDate)}
-                </p>
-              )}
+              <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
+                <CalendarDays size={14} /> День {ui.currentDay} из {ui.totalDays}
+              </p>
             </div>
             {currentUser.capabilities.canCreateEvents && (
               <ActionIconButton
@@ -154,330 +242,467 @@ export function SchedulePage() {
           </div>
         </div>
 
-        <div className="px-5 pb-8 xl:grid xl:grid-cols-[minmax(0,1.7fr)_320px] xl:gap-6">
+        <div className="px-5 pb-8 xl:grid xl:grid-cols-[minmax(0,1.7fr)_320px] xl:gap-6 xl:items-start">
           <div className="min-w-0">
-            <div className="pb-4 flex gap-2 overflow-x-auto">
-              {days.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => setActiveDay(day)}
-                  className="px-4 py-2 rounded-[var(--radius-sm)] text-[14px] whitespace-nowrap transition-colors"
-                  style={{
-                    background: activeDay === day ? "var(--text-primary)" : "var(--bg-card)",
-                    color: activeDay === day ? "var(--text-inverted)" : "var(--text-secondary)",
-                    border: activeDay === day ? "none" : "1px solid var(--line-subtle)",
-                    fontWeight: activeDay === day ? 500 : 400,
-                  }}
-                >
-                  День {day}
-                </button>
-              ))}
-            </div>
-
-            {dayEvents.length === 0 ? (
+            {groups.length === 0 ? (
               <SurfaceCard className="p-6">
                 <p className="text-[15px]" style={{ color: "var(--text-tertiary)" }}>
-                  Для этого дня пока нет событий.
+                  Пока нет запланированных событий.
                 </p>
               </SurfaceCard>
             ) : (
-              <div className="relative">
-                <div className="absolute left-[25px] top-0 bottom-0 w-[2px]" style={{ background: "var(--line-subtle)" }} />
-                <div className="space-y-3">
-                  {dayEvents.map((event) => {
-                    const isExpanded = expanded === event.id;
-                    const hasLaptop = (event.materials ?? []).some((item) => item.toLowerCase().includes("ноутбук"));
-                    const isChecked = event.attendance === "confirmed";
-                    const eventMaterials = materials.filter((material) => material.eventId === event.id);
-                    const eventResources = resources.filter((resource) => resource.eventId === event.id);
-                    const canEditEvent = currentUser.capabilities.canEditAllEvents
-                      || (currentUser.capabilities.canEditOwnEvents && event.teacherIds.includes(currentUser.id));
-                    const canManageEventAssets = currentUser.capabilities.canManageAll
-                      || (currentUser.capabilities.canEditOwnEvents && event.teacherIds.includes(currentUser.id));
-                    const dotColor =
-                      event.status === "in_progress"
-                        ? "var(--success)"
-                        : event.status === "completed"
-                          ? "var(--line-strong)"
-                          : event.status === "changed"
-                            ? "var(--warning)"
-                            : event.status === "cancelled"
-                              ? "var(--danger)"
-                              : "var(--brand)";
-
-                    return (
-                      <div key={event.id} className="relative pl-[52px]">
-                        <div
-                          className={`absolute left-[20px] top-4 w-[12px] h-[12px] rounded-full z-10 ${event.status === "in_progress" ? "animate-pulse" : ""}`}
-                          style={{ backgroundColor: dotColor, border: "2px solid var(--bg-card)" }}
-                        />
-                        <SurfaceCard
-                          onClick={() => setExpanded(isExpanded ? null : event.id)}
-                          className={`p-4 ${event.status === "cancelled" ? "opacity-50" : ""}`}
+              <div className="space-y-6">
+                {groups.map((group) => (
+                  <section
+                    key={group.day}
+                    ref={(node) => {
+                      if (node) {
+                        dayRefs.current.set(group.day, node);
+                      } else {
+                        dayRefs.current.delete(group.day);
+                      }
+                    }}
+                  >
+                    <div
+                      className="sticky top-0 z-10 py-3"
+                      style={{ background: "var(--bg-card)" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <p
+                          className="text-[12px] tracking-wide"
+                          style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
                         >
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
-                                {event.startAt}–{event.endAt}
-                              </span>
-                              {hasLaptop && (
-                                <span className="flex items-center gap-1 text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]" style={{ background: "var(--info-soft)", color: "var(--info)" }}>
-                                  <Laptop size={12} /> Ноутбук
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <AttendanceBadge attendance={event.attendance} />
-                              <StatusBadge status={event.status} />
-                              {canEditEvent && (
-                                <ActionIconButton
-                                  kind="edit"
-                                  label={`Редактировать ${event.title}`}
-                                  onClick={(clickEvent) => {
-                                    clickEvent.preventDefault();
-                                    clickEvent.stopPropagation();
-                                    setAdminState({ kind: "event", mode: "edit", entity: event });
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </div>
+                          {formatDayHeader(group.date)}
+                        </p>
+                        <span
+                          className="text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"
+                          style={{
+                            background: group.day === ui.currentDay ? "var(--brand-soft)" : "var(--bg-subtle)",
+                            color: group.day === ui.currentDay ? "var(--text-primary)" : "var(--text-secondary)",
+                            fontWeight: group.day === ui.currentDay ? 600 : 400,
+                          }}
+                        >
+                          День {group.day}
+                        </span>
+                        <div className="flex-1 h-px" style={{ background: "var(--line-subtle)" }} />
+                      </div>
+                      {group.theme && (
+                        <p
+                          className="text-[15px] mt-1.5"
+                          style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                        >
+                          {group.theme}
+                        </p>
+                      )}
+                    </div>
 
-                          <h3
-                            className={`text-[16px] mb-1 ${event.status === "cancelled" ? "line-through" : ""}`}
-                            style={{ color: event.status === "cancelled" ? "var(--text-tertiary)" : "var(--text-primary)", fontWeight: 500 }}
-                          >
-                            {event.title}
-                          </h3>
-                          <p className="text-[13px] flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
-                            <MapPin size={13} /> {event.place}
-                          </p>
+                    <div className="relative">
+                      <div
+                        className="absolute left-[25px] top-0 bottom-0 w-[2px]"
+                        style={{ background: "var(--line-subtle)" }}
+                      />
+                      <div className="space-y-3">
+                        {group.events.map((event) => {
+                          const isExpanded = expanded === event.id;
+                          const hasLaptop = (event.materials ?? []).some((item) =>
+                            item.toLowerCase().includes("ноутбук"),
+                          );
+                          const isChecked = event.attendance === "confirmed";
+                          const eventMaterials = materials.filter((material) => material.eventId === event.id);
+                          const eventResources = resources.filter((resource) => resource.eventId === event.id);
+                          const canEditEvent =
+                            currentUser.capabilities.canEditAllEvents ||
+                            (currentUser.capabilities.canEditOwnEvents && event.teacherIds.includes(currentUser.id));
+                          const dotColor =
+                            event.status === "in_progress"
+                              ? "var(--success)"
+                              : event.status === "completed"
+                                ? "var(--line-strong)"
+                                : event.status === "changed"
+                                  ? "var(--warning)"
+                                  : event.status === "cancelled"
+                                    ? "var(--danger)"
+                                    : "var(--brand)";
 
-                          {eventMaterials.length > 0 && (
-                            <button
-                              onClick={(evt) => {
-                                evt.stopPropagation();
-                                navigate(`/materials?event=${event.id}`);
-                              }}
-                              className="mt-2 inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
-                              style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
-                            >
-                              <FolderOpen size={12} />
-                              Материалы ({eventMaterials.length})
-                            </button>
-                          )}
+                          const { title: displayTitle, teacher } = splitEventTitle(event.title);
 
-                          {isExpanded && (
-                            <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--line-subtle)" }} onClick={(evt) => evt.stopPropagation()}>
-                              {event.description && (
-                                <p className="text-[14px] mb-3" style={{ color: "var(--text-secondary)" }}>{event.description}</p>
-                              )}
-                              <p className="text-[13px] flex items-center gap-1.5 mb-3" style={{ color: "var(--text-tertiary)" }}>
-                                <Clock size={13} /> {event.building}{event.address ? `, ${event.address}` : ""}
-                              </p>
-
-                              {hasLaptop && (
-                                <div className="rounded-[var(--radius-md)] p-3 mb-3 flex items-center gap-2.5" style={{ background: "var(--info-soft)" }}>
-                                  <Laptop size={15} style={{ color: "var(--info)" }} />
-                                  <p className="text-[13px]" style={{ color: "var(--info)" }}>Возьмите ноутбук с зарядкой</p>
-                                </div>
-                              )}
-
-                              {event.materials && event.materials.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mb-3">
-                                  {event.materials.map((material) => (
-                                    <span key={material} className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]" style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}>
-                                      {material}
+                          return (
+                            <div key={event.id} className="relative pl-[52px]">
+                              <div
+                                className={`absolute left-[20px] top-4 w-[12px] h-[12px] rounded-full ${event.status === "in_progress" ? "animate-pulse" : ""}`}
+                                style={{ backgroundColor: dotColor, border: "2px solid var(--bg-card)" }}
+                              />
+                              <SurfaceCard
+                                onClick={() => setExpanded(isExpanded ? null : event.id)}
+                                className={`p-4 ${event.status === "cancelled" ? "opacity-50" : ""}`}
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                                      {event.startAt}–{event.endAt}
                                     </span>
-                                  ))}
-                                </div>
-                              )}
-
-                              <div className="space-y-3 mb-3">
-                                <div>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>Связанные материалы</p>
-                                    {canManageEventAssets && (
-                                      <ActionIconButton
-                                        kind="plus"
-                                        label="Добавить материал"
-                                        onClick={(clickEvent) => {
-                                          clickEvent.preventDefault();
-                                          setAdminState({ kind: "material", mode: "create", defaults: { eventId: event.id, day: event.day } });
-                                        }}
-                                      />
+                                    {hasLaptop && (
+                                      <span
+                                        className="flex items-center gap-1 text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"
+                                        style={{ background: "var(--info-soft)", color: "var(--info)" }}
+                                      >
+                                        <Laptop size={12} /> Ноутбук
+                                      </span>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
-                                    {eventMaterials.map((material) => (
-                                      <div key={material.id} className="rounded-[var(--radius-md)] border p-3 flex items-center gap-3" style={{ borderColor: "var(--line-subtle)" }}>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-[14px]" style={{ color: "var(--text-primary)" }}>{material.title}</p>
-                                          <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>{material.type}{material.url ? " · есть ссылка" : ""}</p>
-                                        </div>
-                                        <button onClick={() => openExternal(material.url)} style={{ color: "var(--info)" }}>
-                                          <ExternalLink size={16} />
-                                        </button>
-                                        {canManageEventAssets && (
-                                          <ActionIconButton
-                                            kind="edit"
-                                            label="Редактировать материал"
-                                            onClick={(clickEvent) => {
-                                              clickEvent.preventDefault();
-                                              setAdminState({ kind: "material", mode: "edit", entity: material });
-                                            }}
-                                          />
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>Связанные ссылки</p>
-                                    {canManageEventAssets && (
-                                      <ActionIconButton
-                                        kind="plus"
-                                        label="Добавить ссылку"
-                                        onClick={(clickEvent) => {
-                                          clickEvent.preventDefault();
-                                          setAdminState({ kind: "resource", mode: "create", defaults: { eventId: event.id, day: event.day } });
-                                        }}
-                                      />
+                                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                                    {teacher && (
+                                      <span
+                                        className="text-[12px] px-2.5 py-1 rounded-full"
+                                        style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
+                                      >
+                                        {teacher}
+                                      </span>
+                                    )}
+                                    {event.status === "in_progress" && (
+                                      <span
+                                        className="text-[12px] px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                                        style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--success)" }} />
+                                        Идёт сейчас
+                                      </span>
+                                    )}
+                                    {event.status === "changed" && (
+                                      <span
+                                        className="text-[12px] px-2.5 py-1 rounded-full"
+                                        style={{ background: "var(--warning-soft)", color: "var(--warning)", fontWeight: 600 }}
+                                      >
+                                        Изменено
+                                      </span>
+                                    )}
+                                    {event.status === "cancelled" && (
+                                      <span
+                                        className="text-[12px] px-2.5 py-1 rounded-full"
+                                        style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}
+                                      >
+                                        Отменено
+                                      </span>
+                                    )}
+                                    <AttendanceBadge attendance={event.attendance} />
+                                    {canEditEvent && (
+                                      <>
+                                        <ActionIconButton
+                                          kind="edit"
+                                          label={`Редактировать ${event.title}`}
+                                          onClick={(clickEvent) => {
+                                            clickEvent.preventDefault();
+                                            clickEvent.stopPropagation();
+                                            setAdminState({ kind: "event", mode: "edit", entity: event });
+                                          }}
+                                        />
+                                        <ActionIconButton
+                                          kind="delete"
+                                          label={`Удалить ${event.title}`}
+                                          onClick={(clickEvent) => {
+                                            clickEvent.preventDefault();
+                                            clickEvent.stopPropagation();
+                                            if (window.confirm(`Удалить занятие «${event.title}»?`)) {
+                                              void deleteAdminEntity("events", event.id);
+                                            }
+                                          }}
+                                        />
+                                      </>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
-                                    {eventResources.map((resource) => (
-                                      <div key={resource.id} className="rounded-[var(--radius-md)] border p-3 flex items-center gap-3" style={{ borderColor: "var(--line-subtle)" }}>
-                                        <Link2 size={16} style={{ color: "var(--text-secondary)" }} />
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-[14px]" style={{ color: "var(--text-primary)" }}>{resource.title}</p>
-                                          <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>{resource.kind}</p>
-                                        </div>
-                                        <button onClick={() => openExternal(resource.url)} style={{ color: "var(--info)" }}>
-                                          <ExternalLink size={16} />
-                                        </button>
-                                        {canManageEventAssets && (
-                                          <ActionIconButton
-                                            kind="edit"
-                                            label="Редактировать ссылку"
-                                            onClick={(clickEvent) => {
-                                              clickEvent.preventDefault();
-                                              setAdminState({ kind: "resource", mode: "edit", entity: resource });
-                                            }}
-                                          />
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="flex gap-2 items-center">
-                                <button
-                                  onClick={() => openExternal(`https://yandex.ru/maps/?text=${encodeURIComponent(event.address || event.place)}`)}
-                                  className="flex items-center gap-1.5 text-[14px]"
+                                <h3
+                                  className={`text-[16px] mb-1 ${event.status === "cancelled" ? "line-through" : ""}`}
+                                  style={{
+                                    color:
+                                      event.status === "cancelled" ? "var(--text-tertiary)" : "var(--text-primary)",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {displayTitle}
+                                </h3>
+                                <p
+                                  className="text-[13px] flex items-center gap-1.5"
                                   style={{ color: "var(--text-secondary)" }}
                                 >
-                                  <Navigation size={15} /> Маршрут
-                                </button>
-                                {event.status === "in_progress" && (
+                                  <MapPin size={13} /> {event.place}
+                                </p>
+
+                                {eventMaterials.length > 0 && (
                                   <button
-                                    onClick={() => void checkInEvent(event.id)}
-                                    className="ml-auto flex items-center gap-1.5 text-[13px] px-4 py-2 rounded-[var(--radius-md)]"
-                                    style={{
-                                      background: isChecked ? "var(--success-soft)" : "var(--text-primary)",
-                                      color: isChecked ? "var(--success)" : "var(--text-inverted)",
+                                    onClick={(evt) => {
+                                      evt.stopPropagation();
+                                      navigate(`/materials?event=${event.id}`);
                                     }}
+                                    className="mt-2 inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
+                                    style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
                                   >
-                                    {isChecked ? <><Check size={13} /> Отмечено</> : "Я здесь"}
+                                    <FolderOpen size={12} />
+                                    Материалы ({eventMaterials.length})
                                   </button>
                                 )}
-                              </div>
+
+                                {isExpanded && (() => {
+                                  const attachments = [
+                                    ...eventMaterials.map((item) => ({ kind: "material" as const, item })),
+                                    ...eventResources.map((item) => ({ kind: "resource" as const, item })),
+                                  ];
+                                  const routeQuery = event.address || event.building || event.place;
+                                  const routeLabel =
+                                    event.address || event.building || event.place || "Открыть в картах";
+                                  const trimmedDescription = (event.description ?? "").trim();
+                                  const showDescription =
+                                    Boolean(trimmedDescription) && trimmedDescription !== group.theme;
+
+                                  return (
+                                    <div
+                                      className="mt-3 pt-3 border-t"
+                                      style={{ borderColor: "var(--line-subtle)" }}
+                                      onClick={(evt) => evt.stopPropagation()}
+                                    >
+                                      {showDescription && (
+                                        <p className="text-[14px] mb-3" style={{ color: "var(--text-secondary)" }}>
+                                          {trimmedDescription}
+                                        </p>
+                                      )}
+
+                                      {hasLaptop && (
+                                        <div
+                                          className="rounded-[var(--radius-md)] p-3 mb-3 flex items-center gap-2.5"
+                                          style={{ background: "var(--info-soft)" }}
+                                        >
+                                          <Laptop size={15} style={{ color: "var(--info)" }} />
+                                          <p className="text-[13px]" style={{ color: "var(--info)" }}>
+                                            Возьмите ноутбук с зарядкой
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {event.materials && event.materials.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mb-3">
+                                          {event.materials.map((material) => (
+                                            <span
+                                              key={material}
+                                              className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
+                                              style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
+                                            >
+                                              {material}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {attachments.length > 0 && (
+                                        <div className="mb-3 space-y-2">
+                                          {attachments.map(({ kind, item }) => {
+                                            const isMaterial = kind === "material";
+                                            const accent = isMaterial
+                                              ? MATERIAL_TYPE_ACCENT[item.type] ?? "var(--text-secondary)"
+                                              : "var(--info)";
+                                            const TypeIcon = isMaterial
+                                              ? (ATTACHMENT_ICONS[item.type] ?? File)
+                                              : Link2;
+                                            const metaText = isMaterial
+                                              ? [
+                                                  MATERIAL_TYPE_LABELS[item.type] ?? item.type,
+                                                  item.fileSize,
+                                                ]
+                                                  .filter(Boolean)
+                                                  .join(" · ")
+                                              : RESOURCE_KIND_LABELS[item.kind] ?? item.kind;
+
+                                            return (
+                                              <div
+                                                key={`${kind}-${item.id}`}
+                                                className="flex items-center gap-3 p-2.5 rounded-[var(--radius-md)] border transition-colors hover:bg-[var(--bg-subtle)]"
+                                                style={{
+                                                  background: "var(--bg-card)",
+                                                  borderColor: "var(--line-subtle)",
+                                                }}
+                                              >
+                                                <div
+                                                  className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+                                                  style={
+                                                    {
+                                                      background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                                                      color: accent,
+                                                    } as CSSProperties
+                                                  }
+                                                >
+                                                  <TypeIcon size={16} />
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openExternal(item.url)}
+                                                  className="flex-1 min-w-0 text-left"
+                                                >
+                                                  <p
+                                                    className="text-[13.5px] leading-snug truncate"
+                                                    style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                                                  >
+                                                    {item.title}
+                                                  </p>
+                                                  <p
+                                                    className="text-[11.5px] mt-0.5 truncate"
+                                                    style={{ color: "var(--text-tertiary)" }}
+                                                  >
+                                                    {metaText}
+                                                  </p>
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openExternal(item.url)}
+                                                  aria-label={isMaterial ? "Скачать" : "Открыть ссылку"}
+                                                  className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center transition-colors hover:bg-[var(--bg-card)] shrink-0"
+                                                  style={{ color: "var(--info)" }}
+                                                >
+                                                  {isMaterial ? <Download size={15} /> : <ExternalLink size={15} />}
+                                                </button>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+
+                                      {routeQuery && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            openExternal(
+                                              `https://yandex.ru/maps/?text=${encodeURIComponent(routeQuery)}`,
+                                            )
+                                          }
+                                          className="w-full flex items-center gap-2 py-1 mb-2 text-left transition-colors hover:underline"
+                                        >
+                                          <Navigation
+                                            size={14}
+                                            style={{ color: "var(--text-tertiary)" }}
+                                            className="shrink-0"
+                                          />
+                                          <span
+                                            className="text-[14px] truncate flex-1"
+                                            style={{ color: "var(--text-primary)" }}
+                                          >
+                                            {routeLabel}
+                                          </span>
+                                          <ExternalLink
+                                            size={13}
+                                            style={{ color: "var(--text-tertiary)" }}
+                                            className="shrink-0"
+                                          />
+                                        </button>
+                                      )}
+
+                                      {event.status === "in_progress" && (
+                                        <div className="flex justify-end">
+                                          <button
+                                            type="button"
+                                            onClick={() => void checkInEvent(event.id)}
+                                            className="flex items-center gap-1.5 text-[13px] px-4 py-2 rounded-[var(--radius-md)]"
+                                            style={{
+                                              background: isChecked ? "var(--success-soft)" : "var(--text-primary)",
+                                              color: isChecked ? "var(--success)" : "var(--text-inverted)",
+                                              fontWeight: 500,
+                                            }}
+                                          >
+                                            {isChecked ? (
+                                              <>
+                                                <Check size={13} /> Отмечено
+                                              </>
+                                            ) : (
+                                              "Я здесь"
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </SurfaceCard>
                             </div>
-                          )}
-                        </SurfaceCard>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  </section>
+                ))}
               </div>
             )}
           </div>
 
           <div className="hidden xl:flex xl:flex-col gap-4">
-            <SurfaceCard className="p-5">
-              <p className="text-[13px] mb-3" style={{ color: "var(--text-tertiary)" }}>Сводка дня</p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Событий", value: String(dayEvents.length) },
-                  { label: "В процессе", value: String(inProgressCount) },
-                  { label: "Завершено", value: String(completedCount) },
-                  { label: "Выбранный день", value: `День ${activeDay}` },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-[var(--radius-md)] p-3" style={{ background: "var(--bg-subtle)" }}>
-                    <p className="text-[12px] mb-1" style={{ color: "var(--text-tertiary)" }}>{item.label}</p>
-                    <p className="text-[18px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>{item.value}</p>
-                  </div>
-                ))}
+            <SurfaceCard className="p-4">
+              <div className="flex items-baseline justify-between mb-3 px-1">
+                <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+                  Дни кемпа
+                </p>
+                <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+                  {ui.currentDay} / {ui.totalDays}
+                </p>
+              </div>
+              <div className="flex flex-col">
+                {groups.map((group) => {
+                  const parts = extractDateParts(group.date);
+                  const isActive = group.day === ui.currentDay;
+                  return (
+                    <button
+                      key={group.day}
+                      onClick={() => {
+                        const node = dayRefs.current.get(group.day);
+                        node?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className="group flex items-center gap-3 px-2 py-2 rounded-[var(--radius-md)] text-left transition-colors hover:bg-[var(--bg-subtle)]"
+                    >
+                      <div
+                        className="w-10 h-10 rounded-[var(--radius-md)] flex flex-col items-center justify-center shrink-0 leading-none"
+                        style={{
+                          background: isActive ? "var(--accent-peach)" : "var(--bg-subtle)",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        <span className="text-[15px]" style={{ fontWeight: 600 }}>
+                          {parts.dayNumber}
+                        </span>
+                        <span
+                          className="text-[9px] uppercase tracking-wider mt-0.5"
+                          style={{
+                            color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
+                            opacity: isActive ? 0.65 : 1,
+                          }}
+                        >
+                          {parts.month}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-[14px] truncate"
+                          style={{
+                            color: "var(--text-primary)",
+                            fontWeight: isActive ? 600 : 500,
+                          }}
+                        >
+                          {parts.weekday}
+                        </p>
+                        <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+                          День {group.day}
+                        </p>
+                      </div>
+                      <span
+                        className="text-[12px] px-2 py-0.5 rounded-full shrink-0"
+                        style={{
+                          background: isActive ? "var(--brand-soft)" : "var(--bg-subtle)",
+                          color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
+                          fontWeight: isActive ? 600 : 400,
+                        }}
+                      >
+                        {group.events.length}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </SurfaceCard>
-
-            {selectedEvent && (
-              <SurfaceCard className="p-5">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>Выбранное событие</p>
-                    <h3 className="text-[18px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                      {selectedEvent.title}
-                    </h3>
-                  </div>
-                  <StatusBadge status={selectedEvent.status} />
-                </div>
-                <div className="space-y-3 text-[14px]" style={{ color: "var(--text-secondary)" }}>
-                  <p className="flex items-center gap-2">
-                    <Clock size={15} /> {selectedEvent.startAt}–{selectedEvent.endAt}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <MapPin size={15} /> {selectedEvent.place}
-                  </p>
-                  {selectedEvent.description && (
-                    <p>{selectedEvent.description}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <div className="rounded-[var(--radius-md)] p-3" style={{ background: "var(--bg-subtle)" }}>
-                    <p className="text-[12px] mb-1" style={{ color: "var(--text-tertiary)" }}>Материалы</p>
-                    <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>{selectedEventMaterials.length}</p>
-                  </div>
-                  <div className="rounded-[var(--radius-md)] p-3" style={{ background: "var(--bg-subtle)" }}>
-                    <p className="text-[12px] mb-1" style={{ color: "var(--text-tertiary)" }}>Ссылки</p>
-                    <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>{selectedEventResources.length}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-4">
-                  <button
-                    onClick={() => openExternal(`https://yandex.ru/maps/?text=${encodeURIComponent(selectedEvent.address || selectedEvent.place)}`)}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]"
-                    style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 500 }}
-                  >
-                    <Navigation size={16} /> Открыть маршрут
-                  </button>
-                  {selectedEventMaterials.length > 0 && (
-                    <button
-                      onClick={() => navigate(`/materials?event=${selectedEvent.id}`)}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]"
-                      style={{ background: "var(--bg-subtle)", color: "var(--text-primary)" }}
-                    >
-                      <FolderOpen size={16} /> Перейти к материалам
-                    </button>
-                  )}
-                </div>
-              </SurfaceCard>
-            )}
           </div>
         </div>
 
@@ -495,9 +720,10 @@ export function SchedulePage() {
             if (!adminState) {
               return;
             }
-            const normalizedPayload = adminState.kind === "event" && !currentUser.capabilities.canAssignTeachers
-              ? { ...(payload as Record<string, unknown>), teacherIds: [] }
-              : payload;
+            const normalizedPayload =
+              adminState.kind === "event" && !currentUser.capabilities.canAssignTeachers
+                ? { ...(payload as Record<string, unknown>), teacherIds: [] }
+                : payload;
             const resource = ADMIN_PATHS[adminState.kind];
             if (adminState.mode === "create") {
               await createAdminEntity(resource, normalizedPayload);

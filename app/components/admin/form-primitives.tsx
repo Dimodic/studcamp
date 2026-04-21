@@ -1,11 +1,11 @@
 import type { MouseEvent } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 const INPUT_CLASSNAME = "w-full border rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] outline-none";
 const INPUT_STYLE = {
   borderColor: "var(--line-subtle)",
   color: "var(--text-primary)",
-  background: "var(--bg-app)",
+  background: "var(--bg-input)",
 } as const;
 
 interface FieldLabelProps {
@@ -107,26 +107,31 @@ export function ToggleField({ label, checked, onChange }: ToggleFieldProps) {
 }
 
 interface ActionIconButtonProps {
-  kind: "plus" | "edit";
+  kind: "plus" | "edit" | "delete";
   label: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 }
 
+const ACTION_ICONS = {
+  plus: Plus,
+  edit: Pencil,
+  delete: Trash2,
+} as const;
+
 export function ActionIconButton({ kind, label, onClick, className = "" }: ActionIconButtonProps) {
-  const Icon = kind === "plus" ? Plus : Pencil;
+  const Icon = ACTION_ICONS[kind];
+  const isDanger = kind === "delete";
+  const hoverClasses = isDanger
+    ? "hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] hover:border-[var(--danger)]"
+    : "hover:bg-[var(--bg-subtle)] hover:border-[var(--line-strong)] hover:text-[var(--text-primary)]";
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`w-7 h-7 rounded-full flex items-center justify-center border shrink-0 ${className}`}
-      style={{
-        background: "var(--bg-card)",
-        borderColor: "var(--line-subtle)",
-        color: "var(--text-secondary)",
-      }}
+      className={`w-7 h-7 rounded-full flex items-center justify-center border shrink-0 bg-[var(--bg-card)] border-[var(--line-subtle)] text-[var(--text-secondary)] transition-[background-color,color,border-color,transform] duration-150 ${hoverClasses} ${className}`}
     >
       <Icon size={14} />
     </button>

@@ -80,9 +80,16 @@ class ProjectSchema(BaseSchema):
     id: str
     title: str
     shortDescription: str
+    description: str | None = None
     direction: str
     minTeam: int
     maxTeam: int
+    mentorName: str | None = None
+    mentorPosition: str | None = None
+    mentorCity: str | None = None
+    mentorTelegram: str | None = None
+    mentorPhoto: str | None = None
+    mentorWorkFormat: str | None = None
 
 
 class StorySlideSchema(BaseSchema):
@@ -274,7 +281,7 @@ class EventUpsertSchema(BaseModel):
     status: str
     description: str | None = None
     materials: list[str] | None = None
-    day: int
+    day: int | None = None
     teacherIds: list[str] = Field(default_factory=list)
 
 
@@ -296,9 +303,16 @@ class UserUpsertSchema(BaseModel):
 class ProjectUpsertSchema(BaseModel):
     title: str
     shortDescription: str
+    description: str | None = None
     direction: str
     minTeam: int
     maxTeam: int
+    mentorName: str | None = None
+    mentorPosition: str | None = None
+    mentorCity: str | None = None
+    mentorTelegram: str | None = None
+    mentorPhoto: str | None = None
+    mentorWorkFormat: str | None = None
 
 
 class MaterialUpsertSchema(BaseModel):
@@ -352,6 +366,16 @@ class DocumentUpsertSchema(BaseModel):
     deadline: str | None = None
     critical: bool = False
     fallback: str | None = None
+
+
+class CampUpsertSchema(BaseModel):
+    name: str
+    shortDesc: str | None = None
+    city: str
+    university: str
+    startDate: date
+    endDate: date
+    status: str
 
 
 class SimpleStatusSchema(BaseModel):

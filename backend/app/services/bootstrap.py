@@ -211,9 +211,16 @@ def _serialize_project(project: Project) -> ProjectSchema:
         id=project.id,
         title=project.title,
         shortDescription=project.short_description,
+        description=project.description,
         direction=project.direction,
         minTeam=project.min_team,
         maxTeam=project.max_team,
+        mentorName=project.mentor_name,
+        mentorPosition=project.mentor_position,
+        mentorCity=project.mentor_city,
+        mentorTelegram=project.mentor_telegram,
+        mentorPhoto=project.mentor_photo,
+        mentorWorkFormat=project.mentor_work_format,
     )
 
 

@@ -1,12 +1,28 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { ArrowLeft, ChevronDown, ChevronUp, Wifi, Users, Droplets, Printer, Shirt, Plug, VolumeX, Utensils, BedDouble, BusFront, MapPinned, Info, Link2, ExternalLink, Key } from "lucide-react";
-import { PageShell, SectionHeader, SurfaceCard } from "./common";
+import {
+  BedDouble,
+  Building,
+  BusFront,
+  ChevronDown,
+  Droplets,
+  Info,
+  Key,
+  MapPinned,
+  Plug,
+  Printer,
+  Shirt,
+  Users,
+  Utensils,
+  VolumeX,
+  Wifi,
+  type LucideIcon,
+} from "lucide-react";
+import { PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
 
-const CATEGORY_ICONS: Record<string, typeof Wifi> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   wifi: Wifi,
   droplets: Droplets,
   printer: Printer,
@@ -18,35 +34,28 @@ const CATEGORY_ICONS: Record<string, typeof Wifi> = {
   "bus-front": BusFront,
   "map-pinned": MapPinned,
   info: Info,
+  building: Building,
 };
 
-const RESOURCE_CATEGORY_LABELS: Record<string, string> = {
-  logistics: "Логистика",
-  housing: "Проживание",
-  forms: "Формы",
-  media: "Медиа",
+const CATEGORY_ACCENTS: Record<string, string> = {
+  wifi: "var(--accent-blue)",
+  droplets: "var(--accent-teal)",
+  printer: "var(--text-secondary)",
+  shirt: "var(--accent-violet)",
+  plug: "var(--accent-peach-warm)",
+  "volume-x": "var(--text-tertiary)",
+  utensils: "var(--accent-lilac)",
+  bed: "var(--accent-blue)",
+  "bus-front": "var(--accent-peach-warm)",
+  "map-pinned": "var(--accent-pink)",
+  info: "var(--accent-blue)",
+  building: "var(--accent-violet)",
 };
-
-const RESOURCE_KIND_LABELS: Record<string, string> = {
-  doc: "Документ",
-  sheet: "Таблица",
-  form: "Форма",
-  folder: "Папка",
-  calendar: "Календарь",
-  gallery: "Галерея",
-  map: "Карта",
-  repo: "Репозиторий",
-  guide: "Гайд",
-};
-
-function openExternal(url: string) {
-  window.open(url, "_blank", "noopener,noreferrer");
-}
 
 export function CampusPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
@@ -56,9 +65,7 @@ export function CampusPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (!data) {
-      return;
-    }
+    if (!data) return;
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get("admin") === "create-campus-category" && data.currentUser.capabilities.canManageCampus) {
       setAdminState({ kind: "campusCategory", mode: "create" });
@@ -66,187 +73,196 @@ export function CampusPage() {
     }
   }, [data, location.search, navigate]);
 
-  if (!data) {
-    return null;
-  }
+  if (!data) return null;
 
-  const { campusCategories, room, resources, currentUser } = data;
-  const supportResources = resources.filter((resource) => ["logistics", "housing", "forms", "media"].includes(resource.category));
+  const { campusCategories, room, currentUser } = data;
   const eventOptions = data.events.map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
 
   return (
-    <div className="min-h-full" style={{ background: "var(--bg-app)", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <PageShell size="wide">
-        <div className="px-5 pt-5 pb-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1" style={{ color: "var(--text-secondary)" }}>
-            <ArrowLeft size={22} />
-          </button>
-          <h1 className="flex-1 text-[var(--text-primary)]">Кампус</h1>
-          {currentUser.capabilities.canManageCampus && (
-            <ActionIconButton
-              kind="plus"
-              label="Добавить раздел кампуса"
-              onClick={(event) => {
-                event.preventDefault();
-                setAdminState({ kind: "campusCategory", mode: "create" });
-              }}
-            />
-          )}
-        </div>
+    <PageShell size="wide">
+      <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-3">
+        <h1 className="text-[var(--text-primary)]">Кампус</h1>
+        {currentUser.capabilities.canManageCampus && (
+          <ActionIconButton
+            kind="plus"
+            label="Добавить раздел кампуса"
+            onClick={(event) => {
+              event.preventDefault();
+              setAdminState({ kind: "campusCategory", mode: "create" });
+            }}
+          />
+        )}
+      </div>
 
-        <div className="px-5 mb-4">
+      <div className="px-5 pb-8 space-y-6">
+        <SurfaceCard className="p-5 sm:p-6">
           {room ? (
-            <SurfaceCard className="p-5">
-              <div className="flex items-center gap-2.5 mb-3">
-                <Key size={17} style={{ color: "var(--brand)" }} />
-                <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>Моя комната</p>
+            <>
+              <div className="flex items-center gap-2.5 mb-4">
+                <div
+                  className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+                  style={
+                    {
+                      background: "color-mix(in srgb, var(--brand) 18%, transparent)",
+                      color: "var(--brand-contrast)",
+                    } as CSSProperties
+                  }
+                >
+                  <Key size={18} style={{ color: "var(--brand)" }} />
+                </div>
+                <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                  Моя комната
+                </p>
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {[
-                  { val: room.number, label: "Номер" },
-                  { val: room.floor, label: "Этаж" },
-                  { val: room.neighbors.length, label: "Соседи" },
-                ].map((item, index) => (
-                  <div key={index} className="rounded-[var(--radius-md)] p-3 text-center" style={{ background: "var(--bg-subtle)" }}>
-                    <p className="text-[20px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>{item.val}</p>
-                    <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>{item.label}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[14px] mb-1" style={{ color: "var(--text-primary)" }}>{room.building}</p>
-              <div className="flex items-center gap-1.5 text-[13px] mb-1" style={{ color: "var(--text-secondary)" }}>
-                <Users size={13} /> {room.neighbors.join(", ")}
-              </div>
-              <p className="text-[13px] mb-2" style={{ color: "var(--text-tertiary)" }}>{room.keyInfo}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {room.rules.map((rule, index) => (
-                  <span key={index} className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]" style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}>
-                    {rule}
-                  </span>
-                ))}
-              </div>
-            </SurfaceCard>
-          ) : (
-            <SurfaceCard className="p-5">
-              <div className="flex items-center gap-2.5 mb-2">
-                <Info size={17} style={{ color: "var(--info)" }} />
-                <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>Личное заселение не определено</p>
-              </div>
-              <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
-                У технического viewer-пользователя нет персональной комнаты. Общие таблицы расселения и логистики доступны ниже.
-              </p>
-            </SurfaceCard>
-          )}
-        </div>
 
-        {supportResources.length > 0 && (
-          <div className="px-5 mb-4">
-            <SectionHeader
-              title="Полезные ссылки"
-              right={(
-                currentUser.capabilities.canManageResources ? (
-                  <ActionIconButton
-                    kind="plus"
-                    label="Добавить ссылку"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setAdminState({ kind: "resource", mode: "create", defaults: { category: "logistics" } });
-                    }}
-                  />
-                ) : undefined
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  { value: room.number, label: "Номер" },
+                  { value: String(room.floor), label: "Этаж" },
+                  { value: String(room.neighbors.length), label: "Соседей" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-[var(--radius-md)] p-3 text-center"
+                    style={{ background: "var(--bg-subtle)" }}
+                  >
+                    <p className="text-[22px] leading-none mb-1" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                      {item.value}
+                    </p>
+                    <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+                      {item.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-2 text-[14px] mb-2" style={{ color: "var(--text-secondary)" }}>
+                <Building size={15} className="mt-[3px] shrink-0" style={{ color: "var(--text-tertiary)" }} />
+                <span>{room.building}</span>
+              </div>
+              {room.neighbors.length > 0 && (
+                <div className="flex items-start gap-2 text-[14px]" style={{ color: "var(--text-secondary)" }}>
+                  <Users size={15} className="mt-[3px] shrink-0" style={{ color: "var(--text-tertiary)" }} />
+                  <span>{room.neighbors.join(", ")}</span>
+                </div>
               )}
-            />
-            <div className="space-y-2">
-              {supportResources.map((resource) => (
-                <SurfaceCard key={resource.id} className="p-3.5 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0" style={{ background: "var(--bg-subtle)" }}>
-                    <Link2 size={18} style={{ color: "var(--text-secondary)" }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] line-clamp-1" style={{ color: "var(--text-primary)" }}>{resource.title}</p>
-                    <div className="flex items-center gap-2 text-[12px] flex-wrap" style={{ color: "var(--text-tertiary)" }}>
-                      <span>{RESOURCE_CATEGORY_LABELS[resource.category] ?? resource.category}</span>
-                      <span>{RESOURCE_KIND_LABELS[resource.kind] ?? resource.kind}</span>
-                      {resource.day && <span>День {resource.day}</span>}
+            </>
+          ) : (
+            <div className="flex items-start gap-3">
+              <div
+                className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+                style={
+                  {
+                    background: "color-mix(in srgb, var(--info) 14%, transparent)",
+                    color: "var(--info)",
+                  } as CSSProperties
+                }
+              >
+                <Info size={18} />
+              </div>
+              <div>
+                <p className="text-[15px] mb-1" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                  Комната ещё не назначена
+                </p>
+                <p className="text-[13.5px]" style={{ color: "var(--text-secondary)" }}>
+                  Следите за орг-обновлениями — расселение опубликуют перед заездом.
+                </p>
+              </div>
+            </div>
+          )}
+        </SurfaceCard>
+
+        {campusCategories.length > 0 && (
+          <div className="space-y-2">
+            {campusCategories.map((category) => {
+              const isOpen = expandedId === category.id;
+              const Icon = CATEGORY_ICONS[category.icon] ?? Info;
+              const accent = CATEGORY_ACCENTS[category.icon] ?? "var(--text-secondary)";
+
+              return (
+                <SurfaceCard key={category.id} className="overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isOpen ? null : category.id)}
+                    aria-expanded={isOpen}
+                    className="w-full p-4 flex items-center gap-3 text-left transition-colors hover:bg-[var(--bg-subtle)]"
+                  >
+                    <div
+                      className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+                      style={
+                        {
+                          background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                          color: accent,
+                        } as CSSProperties
+                      }
+                    >
+                      <Icon size={18} />
                     </div>
-                  </div>
-                  <button onClick={() => openExternal(resource.url)} style={{ color: "var(--info)" }}>
-                    <ExternalLink size={19} />
-                  </button>
-                  {currentUser.capabilities.canManageResources && (
-                    <ActionIconButton
-                      kind="edit"
-                      label="Редактировать ссылку"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        setAdminState({ kind: "resource", mode: "edit", entity: resource });
+                    <span className="flex-1 text-[15px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                      {category.title}
+                    </span>
+                    {currentUser.capabilities.canManageCampus && (
+                      <>
+                        <ActionIconButton
+                          kind="edit"
+                          label="Редактировать раздел"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setAdminState({ kind: "campusCategory", mode: "edit", entity: category });
+                          }}
+                        />
+                        <ActionIconButton
+                          kind="delete"
+                          label="Удалить раздел"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (window.confirm(`Удалить раздел «${category.title}»?`)) {
+                              void deleteAdminEntity("campus-categories", category.id);
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                    <ChevronDown
+                      size={18}
+                      style={{
+                        color: "var(--text-tertiary)",
+                        transition: "transform 0.2s ease",
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                       }}
                     />
+                  </button>
+
+                  {isOpen && (
+                    <div
+                      className="px-4 pb-4 pt-1 space-y-3 border-t"
+                      style={{ borderColor: "var(--line-subtle)" }}
+                    >
+                      {category.items.map((item, index) => (
+                        <div
+                          key={index}
+                          className="pt-3"
+                          style={{ borderTop: index === 0 ? "none" : "1px dashed var(--line-subtle)" }}
+                        >
+                          <p className="text-[14px] mb-1" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                            {item.title}
+                          </p>
+                          <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                            {item.detail}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </SurfaceCard>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
 
-        <div className="px-5 pb-8 space-y-2">
-          {campusCategories.map((category) => {
-            const isOpen = expandedId === category.id;
-            const Icon = CATEGORY_ICONS[category.icon] || Wifi;
-            return (
-              <SurfaceCard key={category.id} className="overflow-hidden">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setExpandedId(isOpen ? null : category.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setExpandedId(isOpen ? null : category.id);
-                    }
-                  }}
-                  className="w-full p-4 flex items-center gap-3 text-left cursor-pointer"
-                >
-                  <div
-                    className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-                    style={{ background: "var(--bg-subtle)" }}
-                  >
-                    <Icon size={16} style={{ color: "var(--text-secondary)" }} />
-                  </div>
-                  <span className="flex-1 text-[15px]" style={{ color: "var(--text-primary)" }}>{category.title}</span>
-                  {currentUser.capabilities.canManageCampus && (
-                    <ActionIconButton
-                      kind="edit"
-                      label="Редактировать раздел"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setAdminState({ kind: "campusCategory", mode: "edit", entity: category });
-                      }}
-                    />
-                  )}
-                  {isOpen ? (
-                    <ChevronUp size={17} style={{ color: "var(--text-tertiary)" }} />
-                  ) : (
-                    <ChevronDown size={17} style={{ color: "var(--text-tertiary)" }} />
-                  )}
-                </div>
-
-                {isOpen && (
-                  <div className="px-4 pb-4 space-y-2.5 border-t pt-3" style={{ borderColor: "var(--line-subtle)" }}>
-                    {category.items.map((item, index) => (
-                      <div key={index}>
-                        <p className="text-[14px]" style={{ color: "var(--text-primary)" }}>{item.title}</p>
-                        <p className="text-[13px]" style={{ color: "var(--text-secondary)" }}>{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </SurfaceCard>
-            );
-          })}
-        </div>
-      </PageShell>
+      </div>
 
       <AdminEditorModal
         open={adminState !== null}
@@ -268,6 +284,6 @@ export function CampusPage() {
           await updateAdminEntity(resource, (adminState.entity as { id: string }).id, payload);
         }}
       />
-    </div>
+    </PageShell>
   );
 }

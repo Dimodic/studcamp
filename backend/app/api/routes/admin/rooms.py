@@ -68,3 +68,18 @@ def update_room_assignment(
     db.add(assignment)
     db.commit()
     return SimpleStatusSchema(ok=True)
+
+
+@router.delete("/{user_id}", response_model=SimpleStatusSchema)
+def delete_room_assignment(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SimpleStatusSchema:
+    require_organizer(current_user)
+    assignment = db.scalar(select(RoomAssignment).where(RoomAssignment.user_id == user_id))
+    if assignment is None:
+        raise HTTPException(status_code=404, detail="RoomAssignment not found")
+    db.delete(assignment)
+    db.commit()
+    return SimpleStatusSchema(ok=True)

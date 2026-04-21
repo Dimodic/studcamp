@@ -26,6 +26,14 @@ interface AppDataContextValue {
   checkInEvent: (eventId: string) => Promise<void>;
   createAdminEntity: (resource: AdminResourcePath, payload: unknown) => Promise<string>;
   updateAdminEntity: (resource: AdminResourcePath, entityId: string, payload: unknown) => Promise<void>;
+  deleteAdminEntity: (resource: AdminResourcePath, entityId: string) => Promise<void>;
+  parseLlmContent: (input: {
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+    text: string;
+    attachments: Array<{ name: string; mimeType: string; base64: string }>;
+  }) => Promise<Array<{ kind: string; payload: Record<string, unknown> }>>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -330,6 +338,35 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [refresh, requireToken],
   );
 
+  const deleteAdminEntity = useCallback(
+    async (resource: AdminResourcePath, entityId: string) => {
+      const authToken = requireToken();
+      try {
+        await api.deleteAdminEntity(authToken, resource, entityId);
+        await refresh();
+      } catch (nextError) {
+        setError(nextError instanceof Error ? nextError.message : "Не удалось удалить запись");
+        throw nextError;
+      }
+    },
+    [refresh, requireToken],
+  );
+
+  const parseLlmContent = useCallback(
+    async (input: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      text: string;
+      attachments: Array<{ name: string; mimeType: string; base64: string }>;
+    }) => {
+      const authToken = requireToken();
+      const response = await api.parseLlmContent(authToken, input);
+      return response.items;
+    },
+    [requireToken],
+  );
+
   const value = useMemo<AppDataContextValue>(
     () => ({
       status,
@@ -346,16 +383,20 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       checkInEvent,
       createAdminEntity,
       updateAdminEntity,
+      deleteAdminEntity,
+      parseLlmContent,
     }),
     [
       checkInEvent,
       createAdminEntity,
       data,
+      deleteAdminEntity,
       error,
       login,
       logout,
       markStoryRead,
       markUpdatesRead,
+      parseLlmContent,
       refresh,
       saveProjectPriorities,
       status,
