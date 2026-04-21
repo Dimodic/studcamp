@@ -130,7 +130,7 @@ function PersonRow({ person, onClick, onEdit, onDelete }: PersonRowProps) {
 export function PeoplePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setProjectAssignment } = useAppData();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [selectedPerson, setSelectedPerson] = useState<Person | AdminUser | null>(null);
@@ -154,6 +154,19 @@ export function PeoplePage() {
         : null,
     [data, selectedPerson],
   );
+  const teamOptions = useMemo(() => {
+    if (!data) return [];
+    const projectById = new Map(data.projects.map((project) => [project.id, project.title]));
+    return data.projectTeams.map((team) => ({
+      teamId: team.id,
+      label: `${projectById.get(team.projectId) ?? team.projectId} · Команда ${team.number}`,
+    }));
+  }, [data]);
+  const selectedUserTeamId = useMemo(() => {
+    if (!data || !selectedPerson) return null;
+    const team = data.projectTeams.find((team) => team.memberIds.includes(selectedPerson.id));
+    return team?.id ?? null;
+  }, [data, selectedPerson]);
 
   useEffect(() => {
     if (!data) return;
@@ -326,6 +339,9 @@ export function PeoplePage() {
             setAdminState({ kind: "document", mode: "edit", entity: document })
           }
           onDeleteDocument={(document) => void deleteAdminEntity("documents", document.id)}
+          teamOptions={teamOptions}
+          currentTeamId={selectedUserTeamId}
+          onAssignTeam={(teamId) => void setProjectAssignment(selectedPerson.id, teamId)}
         />
       )}
 
@@ -369,6 +385,9 @@ interface PersonDetailsSheetProps {
   onCreateDocument: () => void;
   onEditDocument: (document: { id: string; title: string; status: string }) => void;
   onDeleteDocument: (document: { id: string; title: string; status: string }) => void;
+  teamOptions?: Array<{ teamId: string; label: string }>;
+  currentTeamId?: string | null;
+  onAssignTeam?: (teamId: string | null) => void;
 }
 
 function PersonDetailsSheet({
@@ -385,6 +404,9 @@ function PersonDetailsSheet({
   onCreateDocument,
   onEditDocument,
   onDeleteDocument,
+  teamOptions,
+  currentTeamId,
+  onAssignTeam,
 }: PersonDetailsSheetProps) {
   const roleStyle = ROLE_STYLES[person.role] ?? ROLE_STYLES.participant;
   const hasDetails =
@@ -517,6 +539,33 @@ function PersonDetailsSheet({
             <p className="text-[13.5px]" style={{ color: "var(--text-tertiary)" }}>
               Профиль скрыт участником. Отображается только ФИО.
             </p>
+          )}
+
+          {canManageUsers && person.role === "participant" && teamOptions && onAssignTeam && (
+            <div>
+              <p
+                className="text-[11px] uppercase tracking-wider mb-2"
+                style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+              >
+                Проект / команда
+              </p>
+              <select
+                value={currentTeamId ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  onAssignTeam(value === "" ? null : value);
+                }}
+                className="w-full rounded-[var(--radius-md)] border px-3 py-2.5 text-[14px] outline-none"
+                style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+              >
+                <option value="">— не назначен —</option>
+                {teamOptions.map((option) => (
+                  <option key={option.teamId} value={option.teamId}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           {canManageUsers && (

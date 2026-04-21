@@ -20,7 +20,9 @@ from backend.app.models.entities import (
     Material,
     OrgUpdate,
     Project,
+    ProjectAssignment,
     ProjectPreference,
+    ProjectTeam,
     Resource,
     RoomAssignment,
     Story,
@@ -46,6 +48,7 @@ from backend.app.schemas.api import (
     OrgUpdateSchema,
     PersonSchema,
     ProjectSchema,
+    ProjectTeamSchema,
     ResourceSchema,
     RoomInfoSchema,
     StorySchema,
@@ -169,6 +172,7 @@ def _serialize_person(user: User) -> PersonSchema:
 def _serialize_current_user(
     user: User,
     attendance_stats: AttendanceStatsSchema | None = None,
+    assigned_team_id: str | None = None,
 ) -> CurrentUserSchema:
     return CurrentUserSchema(
         **_serialize_person(user).model_dump(),
@@ -176,6 +180,7 @@ def _serialize_current_user(
         notificationsOn=user.notifications_enabled,
         capabilities=_capabilities_for(user),
         attendance=attendance_stats,
+        assignedTeamId=assigned_team_id,
     )
 
 
@@ -492,14 +497,35 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
             return list(items)
         return [item for item in items if not getattr(item, "is_hidden", False)]
 
+    teams = db.scalars(
+        select(ProjectTeam).order_by(ProjectTeam.project_id.asc(), ProjectTeam.number.asc())
+    ).all()
+    team_members: dict[str, list[str]] = {team.id: [] for team in teams}
+    assigned_team_id: str | None = None
+    for row in db.scalars(select(ProjectAssignment)):
+        team_members.setdefault(row.team_id, []).append(row.user_id)
+        if row.user_id == user.id:
+            assigned_team_id = row.team_id
+
+    team_schemas = [
+        ProjectTeamSchema(
+            id=team.id,
+            projectId=team.project_id,
+            number=team.number,
+            memberIds=team_members.get(team.id, []),
+        )
+        for team in teams
+    ]
+
     return BootstrapSchema(
         camp=_serialize_camp(camp),
-        currentUser=_serialize_current_user(user, attendance_stats),
+        currentUser=_serialize_current_user(user, attendance_stats, assigned_team_id),
         events=[_serialize_event(event, state.attendance, event_teachers) for event in visible(events)],
         people=[_serialize_person(person) for person in people],
         projects=[_serialize_project(project) for project in visible(projects)],
         projectSelectionPhase=camp.project_selection_phase,
         projectPriorities=state.project_priorities,
+        projectTeams=team_schemas,
         stories=[_serialize_story(story, state.story_reads) for story in visible(stories)],
         orgUpdates=[_serialize_org_update(update, state.update_reads) for update in visible(updates)],
         documents=[_serialize_document(document) for document in documents],

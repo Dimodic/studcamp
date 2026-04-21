@@ -50,6 +50,11 @@ interface AppDataContextValue {
     entityId: string,
     hidden: boolean,
   ) => Promise<void>;
+  setProjectPhase: (phase: string) => Promise<void>;
+  createProjectTeam: (projectId: string) => Promise<{ id: string; projectId: string; number: number }>;
+  deleteProjectTeam: (teamId: string) => Promise<void>;
+  setProjectAssignment: (userId: string, teamId: string | null) => Promise<void>;
+  autoDistributeAssignments: () => Promise<{ assigned: number; unassigned: string[] }>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -88,6 +93,7 @@ function normalizeBootstrap(bootstrap: BootstrapPayload): BootstrapPayload {
     adminUsers: bootstrap.adminUsers ?? [],
     adminDocuments: bootstrap.adminDocuments ?? [],
     adminRoomAssignments: bootstrap.adminRoomAssignments ?? [],
+    projectTeams: bootstrap.projectTeams ?? [],
   };
 }
 
@@ -420,6 +426,50 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [refresh, requireToken],
   );
 
+  const setProjectPhase = useCallback(
+    async (phase: string) => {
+      const authToken = requireToken();
+      await api.setProjectPhase(authToken, phase);
+      await refresh();
+    },
+    [refresh, requireToken],
+  );
+
+  const createProjectTeam = useCallback(
+    async (projectId: string) => {
+      const authToken = requireToken();
+      const team = await api.createProjectTeam(authToken, projectId);
+      await refresh();
+      return team;
+    },
+    [refresh, requireToken],
+  );
+
+  const deleteProjectTeam = useCallback(
+    async (teamId: string) => {
+      const authToken = requireToken();
+      await api.deleteProjectTeam(authToken, teamId);
+      await refresh();
+    },
+    [refresh, requireToken],
+  );
+
+  const setProjectAssignment = useCallback(
+    async (userId: string, teamId: string | null) => {
+      const authToken = requireToken();
+      await api.setProjectAssignment(authToken, userId, teamId);
+      await refresh();
+    },
+    [refresh, requireToken],
+  );
+
+  const autoDistributeAssignments = useCallback(async () => {
+    const authToken = requireToken();
+    const response = await api.autoDistributeAssignments(authToken);
+    await refresh();
+    return response;
+  }, [refresh, requireToken]);
+
   const value = useMemo<AppDataContextValue>(
     () => ({
       status,
@@ -441,12 +491,20 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       parseAttendancePhoto,
       markAttendance,
       setEntityVisibility,
+      setProjectPhase,
+      createProjectTeam,
+      deleteProjectTeam,
+      setProjectAssignment,
+      autoDistributeAssignments,
     }),
     [
+      autoDistributeAssignments,
       checkInEvent,
       createAdminEntity,
+      createProjectTeam,
       data,
       deleteAdminEntity,
+      deleteProjectTeam,
       error,
       login,
       logout,
@@ -458,6 +516,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       refresh,
       saveProjectPriorities,
       setEntityVisibility,
+      setProjectAssignment,
+      setProjectPhase,
       status,
       syncStatus,
       updateAdminEntity,

@@ -231,4 +231,52 @@ export const api = {
       body: JSON.stringify({ hidden }),
     });
   },
+  setProjectPhase(token: string, phase: string) {
+    return request<{ ok: boolean }>(`/admin/project-phase`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ phase }),
+    });
+  },
+  createProjectTeam(token: string, projectId: string) {
+    return request<{ id: string; projectId: string; number: number }>(
+      `/admin/projects/${projectId}/teams`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+  },
+  deleteProjectTeam(token: string, teamId: string) {
+    return request<{ ok: boolean }>(`/admin/teams/${teamId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  setProjectAssignment(token: string, userId: string, teamId: string | null) {
+    return request<{ ok: boolean }>(`/admin/project-assignments`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, teamId }),
+    });
+  },
+  autoDistributeAssignments(token: string) {
+    return request<{ assigned: number; unassigned: string[] }>(
+      `/admin/project-assignments/auto`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+  },
 };

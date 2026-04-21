@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { useSearchParams } from "react-router";
 import {
   Check,
   ChevronDown,
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 import { Avatar, PageShell, SurfaceCard } from "./common";
 import { useAppData } from "../lib/app-data";
-import type { Project, ProjectSelectionPhase } from "../lib/domain";
+import type { AdminUser, Person, Project, ProjectSelectionPhase, ProjectTeam } from "../lib/domain";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "./admin-ui";
 
 const PHASE_COPY: Record<
@@ -342,6 +341,15 @@ interface ProjectSectionProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onToggleHidden?: () => void;
+  teams?: ProjectTeam[];
+  personById?: Map<string, Person | AdminUser>;
+  currentUserId?: string;
+  availableParticipants?: (Person | AdminUser)[];
+  canManage?: boolean;
+  onAddTeam?: (projectId: string) => void;
+  onDeleteTeam?: (teamId: string) => void;
+  onAssign?: (userId: string, teamId: string) => void;
+  onUnassign?: (userId: string) => void;
 }
 
 function ProjectSection({
@@ -353,6 +361,15 @@ function ProjectSection({
   onEdit,
   onDelete,
   onToggleHidden,
+  teams,
+  personById,
+  currentUserId,
+  availableParticipants,
+  canManage,
+  onAddTeam,
+  onDeleteTeam,
+  onAssign,
+  onUnassign,
 }: ProjectSectionProps) {
   const selected = priorityIndex >= 0;
   const isInteractive = phase === "open" && Boolean(onToggle);
@@ -487,6 +504,236 @@ function ProjectSection({
           ))}
         </div>
       )}
+
+      {(phase === "closed" || phase === "results") && teams && personById && (
+        <TeamRosterBlock
+          project={project}
+          teams={teams}
+          personById={personById}
+          currentUserId={currentUserId}
+          availableParticipants={availableParticipants}
+          canManage={Boolean(canManage)}
+          onAddTeam={onAddTeam}
+          onDeleteTeam={onDeleteTeam}
+          onAssign={onAssign}
+          onUnassign={onUnassign}
+        />
+      )}
+    </div>
+  );
+}
+
+interface TeamRosterBlockProps {
+  project: Project;
+  teams: ProjectTeam[];
+  personById: Map<string, Person | AdminUser>;
+  currentUserId?: string;
+  availableParticipants?: (Person | AdminUser)[];
+  canManage: boolean;
+  onAddTeam?: (projectId: string) => void;
+  onDeleteTeam?: (teamId: string) => void;
+  onAssign?: (userId: string, teamId: string) => void;
+  onUnassign?: (userId: string) => void;
+}
+
+function TeamRosterBlock({
+  project,
+  teams,
+  personById,
+  currentUserId,
+  availableParticipants,
+  canManage,
+  onAddTeam,
+  onDeleteTeam,
+  onAssign,
+  onUnassign,
+}: TeamRosterBlockProps) {
+  const projectTeams = teams.filter((team) => team.projectId === project.id);
+  const [pickerOpenTeam, setPickerOpenTeam] = useState<string | null>(null);
+
+  const assignedElsewhere = new Set<string>();
+  for (const team of teams) {
+    if (team.projectId !== project.id) {
+      for (const id of team.memberIds) assignedElsewhere.add(id);
+    }
+  }
+  const currentTeamMembers = new Set(projectTeams.flatMap((team) => team.memberIds));
+  const candidates = (availableParticipants ?? []).filter(
+    (person) => !currentTeamMembers.has(person.id),
+  );
+
+  return (
+    <div
+      className="mt-4 rounded-[var(--radius-md)] p-4"
+      style={{ background: "var(--bg-subtle)" }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+          Команды
+        </p>
+        {canManage && onAddTeam && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAddTeam(project.id);
+            }}
+            className="text-[12px] px-2.5 py-1 rounded-full transition-colors hover:bg-[var(--bg-card)]"
+            style={{ color: "var(--text-secondary)", border: "1px solid var(--line-subtle)" }}
+          >
+            + Команда
+          </button>
+        )}
+      </div>
+
+      {projectTeams.length === 0 ? (
+        <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+          Команд ещё нет. {canManage ? "Нажмите «Распределить по приоритетам» наверху или создайте команду вручную." : "Организатор ещё не распределил участников."}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {projectTeams.map((team) => {
+            const isPickerOpen = pickerOpenTeam === team.id;
+            const isMyTeam = currentUserId !== undefined && team.memberIds.includes(currentUserId);
+            return (
+              <div
+                key={team.id}
+                className="rounded-[var(--radius-sm)] p-3"
+                style={{
+                  background: "var(--bg-card)",
+                  border: isMyTeam ? "1.5px solid var(--brand)" : "1px solid var(--line-subtle)",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[13px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                    Команда {team.number}
+                    {isMyTeam && (
+                      <span
+                        className="ml-2 text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                        style={{ background: "var(--brand-soft)", color: "var(--text-primary)", fontWeight: 600 }}
+                      >
+                        Ваша
+                      </span>
+                    )}
+                    <span className="ml-2 text-[12px]" style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>
+                      {team.memberIds.length} / {project.maxTeam}
+                    </span>
+                  </p>
+                  {canManage && onDeleteTeam && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (window.confirm(`Удалить команду ${team.number}? Участники вернутся в распределение.`)) {
+                          onDeleteTeam(team.id);
+                        }
+                      }}
+                      className="text-[11px] px-2 py-0.5 rounded-full transition-colors hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      удалить
+                    </button>
+                  )}
+                </div>
+                {team.memberIds.length === 0 ? (
+                  <p className="text-[12.5px]" style={{ color: "var(--text-tertiary)" }}>
+                    Пока пусто.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {team.memberIds.map((memberId) => {
+                      const person = personById.get(memberId);
+                      return (
+                        <span
+                          key={memberId}
+                          className="text-[12.5px] px-2.5 py-1 rounded-full inline-flex items-center gap-1.5"
+                          style={{ background: "var(--bg-subtle)", color: "var(--text-primary)" }}
+                        >
+                          {person?.name ?? memberId}
+                          {canManage && onUnassign && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onUnassign(memberId);
+                              }}
+                              className="text-[11px] opacity-60 hover:opacity-100"
+                              aria-label="Убрать из команды"
+                              title="Убрать из команды"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {canManage && onAssign && (
+                  <div className="mt-2">
+                    {isPickerOpen ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          defaultValue=""
+                          onChange={(event) => {
+                            const userId = event.target.value;
+                            if (userId) onAssign(userId, team.id);
+                            setPickerOpenTeam(null);
+                          }}
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex-1 text-[12.5px] rounded-[var(--radius-sm)] border px-2 py-1 outline-none"
+                          style={{ borderColor: "var(--line-subtle)", background: "var(--bg-card)", color: "var(--text-primary)" }}
+                        >
+                          <option value="" disabled>
+                            Добавить участника…
+                          </option>
+                          {candidates.map((candidate) => {
+                            const alsoAssigned = assignedElsewhere.has(candidate.id);
+                            return (
+                              <option key={candidate.id} value={candidate.id}>
+                                {candidate.name}
+                                {alsoAssigned ? " (перенести из другой команды)" : ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setPickerOpenTeam(null);
+                          }}
+                          className="text-[12px]"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setPickerOpenTeam(team.id);
+                        }}
+                        className="text-[12.5px] transition-colors hover:text-[var(--text-primary)]"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        + добавить участника
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -500,6 +747,15 @@ interface MentorCardProps {
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (project: Project) => void;
   onToggleProjectHidden?: (project: Project) => void;
+  teams?: ProjectTeam[];
+  personById?: Map<string, Person | AdminUser>;
+  currentUserId?: string;
+  availableParticipants?: (Person | AdminUser)[];
+  canManage?: boolean;
+  onAddTeam?: (projectId: string) => void;
+  onDeleteTeam?: (teamId: string) => void;
+  onAssign?: (userId: string, teamId: string) => void;
+  onUnassign?: (userId: string) => void;
 }
 
 function MentorCard({
@@ -511,6 +767,15 @@ function MentorCard({
   onEditProject,
   onDeleteProject,
   onToggleProjectHidden,
+  teams,
+  personById,
+  currentUserId,
+  availableParticipants,
+  canManage,
+  onAddTeam,
+  onDeleteTeam,
+  onAssign,
+  onUnassign,
 }: MentorCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const hasMyProject = group.projects.some((project) => project.id === myProjectId);
@@ -564,6 +829,15 @@ function MentorCard({
                 onEdit={onEditProject ? () => onEditProject(project) : undefined}
                 onDelete={onDeleteProject ? () => onDeleteProject(project) : undefined}
                 onToggleHidden={onToggleProjectHidden ? () => onToggleProjectHidden(project) : undefined}
+                teams={teams}
+                personById={personById}
+                currentUserId={currentUserId}
+                availableParticipants={availableParticipants}
+                canManage={canManage}
+                onAddTeam={onAddTeam}
+                onDeleteTeam={onDeleteTeam}
+                onAssign={onAssign}
+                onUnassign={onUnassign}
               />
             </div>
           ))}
@@ -581,7 +855,12 @@ function MentorCard({
   );
 }
 
-const DEV_PHASES: ProjectSelectionPhase[] = ["countdown", "open", "closed", "results"];
+const PHASE_OPTIONS: { value: ProjectSelectionPhase; label: string }[] = [
+  { value: "countdown", label: "Скоро выбор" },
+  { value: "open", label: "Приоритеты" },
+  { value: "closed", label: "Распределение" },
+  { value: "results", label: "Результаты" },
+];
 
 export function ProjectsPage() {
   const {
@@ -591,8 +870,12 @@ export function ProjectsPage() {
     updateAdminEntity,
     deleteAdminEntity,
     setEntityVisibility,
+    setProjectPhase,
+    createProjectTeam,
+    deleteProjectTeam,
+    setProjectAssignment,
+    autoDistributeAssignments,
   } = useAppData();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [priorities, setPriorities] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const [allExpanded, setAllExpanded] = useState(false);
@@ -602,6 +885,8 @@ export function ProjectsPage() {
     entity?: unknown;
     defaults?: Record<string, unknown>;
   } | null>(null);
+  const [phaseBusy, setPhaseBusy] = useState(false);
+  const [distributing, setDistributing] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -613,18 +898,19 @@ export function ProjectsPage() {
     return null;
   }
 
-  const devPhaseParam = searchParams.get("dev-phase");
-  const devPhase = DEV_PHASES.includes(devPhaseParam as ProjectSelectionPhase)
-    ? (devPhaseParam as ProjectSelectionPhase)
-    : null;
-  const devEmpty = searchParams.get("dev-empty") === "1";
-  const isDevOverrideActive = import.meta.env.DEV && (devPhase !== null || devEmpty);
-
-  const phase = (devPhase ?? (data.projectSelectionPhase as ProjectSelectionPhase));
-  const allProjects = devEmpty ? [] : data.projects;
+  const phase = data.projectSelectionPhase as ProjectSelectionPhase;
+  const allProjects = data.projects;
   const eventOptions = data.events.map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
   const canManage = data.currentUser.capabilities.canManageProjects;
   const isParticipant = data.currentUser.role === "participant";
+  const teams = data.projectTeams ?? [];
+  const participantPool = data.adminUsers.length > 0 ? data.adminUsers : data.people;
+  const participantUsers = participantPool.filter((person) => person.role === "participant");
+  const personById = new Map(participantPool.map((person) => [person.id, person]));
+  const userTeam = new Map<string, string>();
+  for (const team of teams) {
+    for (const memberId of team.memberIds) userTeam.set(memberId, team.id);
+  }
 
   const isPriorityView = isParticipant && phase === "closed" && priorities.length > 0;
   const availableProjects = isPriorityView
@@ -633,7 +919,10 @@ export function ProjectsPage() {
         .filter((project): project is Project => Boolean(project)))
     : allProjects;
 
-  const myProjectId = isParticipant && phase === "results" ? priorities[0] : undefined;
+  // В results у участника «мой проект» — тот, к команде которого он привязан.
+  const assignedTeamId = data.currentUser.assignedTeamId ?? null;
+  const assignedTeam = assignedTeamId ? teams.find((team) => team.id === assignedTeamId) : undefined;
+  const myProjectId = isParticipant && phase === "results" ? assignedTeam?.projectId : undefined;
   const myProject = myProjectId
     ? availableProjects.find((project) => project.id === myProjectId)
     : undefined;
@@ -683,19 +972,45 @@ export function ProjectsPage() {
           ? (project) => void setEntityVisibility("projects", project.id, !project.isHidden)
           : undefined
       }
+      teams={teams}
+      personById={personById}
+      currentUserId={data.currentUser.id}
+      availableParticipants={canManage ? participantUsers : undefined}
+      canManage={canManage}
+      onAddTeam={canManage ? (projectId) => void createProjectTeam(projectId) : undefined}
+      onDeleteTeam={canManage ? (teamId) => void deleteProjectTeam(teamId) : undefined}
+      onAssign={canManage ? (userId, teamId) => void setProjectAssignment(userId, teamId) : undefined}
+      onUnassign={canManage ? (userId) => void setProjectAssignment(userId, null) : undefined}
     />
   );
 
   const isEmpty = availableProjects.length === 0;
 
-  const updateDevOverride = (key: "dev-phase" | "dev-empty", value: string | null) => {
-    const next = new URLSearchParams(searchParams);
-    if (value === null) {
-      next.delete(key);
-    } else {
-      next.set(key, value);
+  const handleSetPhase = async (next: ProjectSelectionPhase) => {
+    if (next === phase || phaseBusy) return;
+    setPhaseBusy(true);
+    try {
+      await setProjectPhase(next);
+    } finally {
+      setPhaseBusy(false);
     }
-    setSearchParams(next, { replace: true });
+  };
+
+  const handleAutoDistribute = async () => {
+    if (distributing) return;
+    setDistributing(true);
+    try {
+      const result = await autoDistributeAssignments();
+      if (result.unassigned.length > 0) {
+        window.alert(
+          `Распределено: ${result.assigned}. Не распределены (нет приоритетов или мест): ${result.unassigned.length}.`,
+        );
+      } else {
+        window.alert(`Распределено: ${result.assigned}. Все участники с приоритетами получили команду.`);
+      }
+    } finally {
+      setDistributing(false);
+    }
   };
 
   return (
@@ -714,65 +1029,50 @@ export function ProjectsPage() {
         )}
       </div>
 
-      {import.meta.env.DEV && (
+      {canManage && (
         <div className="px-5 mb-3">
           <div
-            className="flex items-center flex-wrap gap-2 p-2 rounded-[var(--radius-md)] border border-dashed"
-            style={{ borderColor: "var(--line-subtle)", background: "var(--bg-card)" }}
+            className="flex items-center flex-wrap gap-2 p-2 rounded-[var(--radius-md)]"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--line-subtle)" }}
           >
-            <span
-              className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-[var(--radius-sm)]"
-              style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 700 }}
-            >
-              DEV
+            <span className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+              Фаза
             </span>
-            <span className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
-              Превью:
-            </span>
-            {DEV_PHASES.map((p) => (
+            {PHASE_OPTIONS.map((option) => {
+              const active = phase === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={phaseBusy || active}
+                  onClick={() => void handleSetPhase(option.value)}
+                  className="text-[12.5px] px-3 py-1.5 rounded-full transition-colors"
+                  style={{
+                    background: active ? "var(--brand)" : "transparent",
+                    color: active ? "var(--brand-contrast)" : "var(--text-primary)",
+                    border: `1px solid ${active ? "var(--brand)" : "var(--line-subtle)"}`,
+                    fontWeight: active ? 600 : 500,
+                    opacity: phaseBusy && !active ? 0.5 : 1,
+                  }}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+            {(phase === "closed" || phase === "results") && (
               <button
-                key={p}
                 type="button"
-                onClick={() => updateDevOverride("dev-phase", devPhase === p ? null : p)}
-                className="text-[12px] px-2.5 py-1 rounded-full transition-colors"
+                onClick={() => void handleAutoDistribute()}
+                disabled={distributing}
+                className="ml-auto text-[12.5px] px-3 py-1.5 rounded-full transition-colors"
                 style={{
-                  background: devPhase === p ? "var(--brand-soft)" : "transparent",
-                  color: devPhase === p ? "var(--text-primary)" : "var(--text-secondary)",
-                  border: `1px solid ${devPhase === p ? "var(--brand)" : "var(--line-subtle)"}`,
-                  fontWeight: devPhase === p ? 600 : 500,
+                  background: "var(--accent-peach)",
+                  color: "var(--text-primary)",
+                  fontWeight: 600,
+                  opacity: distributing ? 0.6 : 1,
                 }}
               >
-                {PHASE_COPY[p].title.toLowerCase().split(" ").slice(0, 2).join(" ")}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => updateDevOverride("dev-empty", devEmpty ? null : "1")}
-              className="text-[12px] px-2.5 py-1 rounded-full transition-colors"
-              style={{
-                background: devEmpty ? "var(--brand-soft)" : "transparent",
-                color: devEmpty ? "var(--text-primary)" : "var(--text-secondary)",
-                border: `1px solid ${devEmpty ? "var(--brand)" : "var(--line-subtle)"}`,
-                fontWeight: devEmpty ? 600 : 500,
-              }}
-            >
-              пусто
-            </button>
-            {isDevOverrideActive && (
-              <button
-                type="button"
-                onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete("dev-phase");
-                  next.delete("dev-empty");
-                  setSearchParams(next, { replace: true });
-                }}
-                className="ml-auto text-[12px] flex items-center gap-1 px-2 py-1 rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--bg-subtle)]"
-                style={{ color: "var(--text-tertiary)" }}
-                aria-label="Сбросить превью"
-                title="Сбросить превью"
-              >
-                <X size={12} /> сброс
+                {distributing ? "Распределяю…" : "Распределить по приоритетам"}
               </button>
             )}
           </div>
@@ -786,7 +1086,7 @@ export function ProjectsPage() {
       {isEmpty ? (
         <div className="px-5 pb-8">
           <EmptyProjectsState
-            canManage={canManage && !devEmpty}
+            canManage={canManage}
             onCreate={() => setAdminState({ kind: "project", mode: "create" })}
           />
         </div>

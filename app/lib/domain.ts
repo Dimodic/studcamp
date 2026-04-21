@@ -47,6 +47,14 @@ export interface CurrentUser extends Person {
   notificationsOn: boolean;
   capabilities: CapabilitySet;
   attendance?: AttendanceStats | null;
+  assignedTeamId?: string | null;
+}
+
+export interface ProjectTeam {
+  id: string;
+  projectId: string;
+  number: number;
+  memberIds: string[];
 }
 
 export interface CapabilitySet {
@@ -208,6 +216,7 @@ export interface BootstrapPayload {
   projects: Project[];
   projectSelectionPhase: ProjectSelectionPhase;
   projectPriorities: string[];
+  projectTeams: ProjectTeam[];
   stories: Story[];
   orgUpdates: OrgUpdate[];
   documents: DocItem[];

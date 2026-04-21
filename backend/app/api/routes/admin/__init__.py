@@ -11,6 +11,7 @@ from . import (
     resources,
     rooms,
     stories,
+    teams,
     updates,
     users,
     visibility,
@@ -31,5 +32,6 @@ router.include_router(documents.router)
 router.include_router(camp.router)
 router.include_router(attendance.router)
 router.include_router(visibility.router)
+router.include_router(teams.router)
 
 __all__ = ["router"]

@@ -65,6 +65,7 @@ class CurrentUserSchema(PersonSchema):
     notificationsOn: bool
     capabilities: CapabilitySchema
     attendance: AttendanceStatsSchema | None = None
+    assignedTeamId: str | None = None
 
 
 class EventSchema(BaseSchema):
@@ -221,6 +222,13 @@ class UiStateSchema(BaseSchema):
     totalDays: int
 
 
+class ProjectTeamSchema(BaseSchema):
+    id: str
+    projectId: str
+    number: int
+    memberIds: list[str] = Field(default_factory=list)
+
+
 class BootstrapSchema(BaseSchema):
     camp: CampSchema
     currentUser: CurrentUserSchema
@@ -229,6 +237,7 @@ class BootstrapSchema(BaseSchema):
     projects: list[ProjectSchema]
     projectSelectionPhase: str
     projectPriorities: list[str]
+    projectTeams: list[ProjectTeamSchema] = Field(default_factory=list)
     stories: list[StorySchema]
     orgUpdates: list[OrgUpdateSchema]
     documents: list[DocumentSchema]

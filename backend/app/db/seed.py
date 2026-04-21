@@ -23,7 +23,9 @@ from backend.app.models.entities import (
     MaterialType,
     OrgUpdate,
     Project,
+    ProjectAssignment,
     ProjectPreference,
+    ProjectTeam,
     Resource,
     RoomAssignment,
     Session as UserSession,
@@ -43,6 +45,8 @@ RESET_ORDER: tuple[type, ...] = (
     StoryRead,
     EventCheckIn,
     EventTeacher,
+    ProjectAssignment,
+    ProjectTeam,
     ProjectPreference,
     UserSession,
     RoomAssignment,
@@ -309,6 +313,26 @@ def _seed_user_state(db: Session, snapshot: dict) -> None:
 
     for priority, project_id in enumerate(snapshot.get("project_priorities", []), start=1):
         db.add(ProjectPreference(user_id=viewer_id, project_id=project_id, priority=priority))
+
+    # Демо-команда: назначаем viewer-а на первый из его приоритетов или,
+    # если приоритетов нет, на первый проект из seed. Это даёт готовый
+    # сценарий для проверки фазы results («ваша команда»).
+    priorities = snapshot.get("project_priorities") or []
+    fallback = snapshot.get("projects", [])
+    demo_project_id: str | None = None
+    if priorities:
+        demo_project_id = priorities[0]
+    elif fallback:
+        demo_project_id = fallback[0].get("id")
+    if demo_project_id:
+        demo_team = ProjectTeam(
+            id=f"team-demo-{demo_project_id[:8]}",
+            project_id=demo_project_id,
+            number=1,
+        )
+        db.add(demo_team)
+        db.flush()
+        db.add(ProjectAssignment(user_id=viewer_id, team_id=demo_team.id))
 
 
 def seed_database(db: Session, seed_path: Path | str | None = None) -> None:

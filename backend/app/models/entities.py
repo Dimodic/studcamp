@@ -220,6 +220,34 @@ class ProjectPreference(TimestampMixin, Base):
     project: Mapped[Project] = relationship(back_populates="preferences")
 
 
+class ProjectTeam(TimestampMixin, Base):
+    """Команда внутри проекта. Команд у проекта может быть несколько (1, 2, …)."""
+
+    __tablename__ = "project_teams"
+    __table_args__ = (UniqueConstraint("project_id", "number", name="uq_project_teams_project_number"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    number: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    assignments: Mapped[list["ProjectAssignment"]] = relationship(
+        back_populates="team", cascade="all, delete-orphan"
+    )
+
+
+class ProjectAssignment(TimestampMixin, Base):
+    """Кто в какой команде. Один участник — одна команда на весь кемп."""
+
+    __tablename__ = "project_assignments"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_project_assignments_user"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    team_id: Mapped[str] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False)
+
+    team: Mapped[ProjectTeam] = relationship(back_populates="assignments")
+
+
 class Story(TimestampMixin, Base):
     __tablename__ = "stories"
 
