@@ -166,18 +166,34 @@ export function ProfilePage() {
                   >
                     {ROLE_LABELS[currentUser.role] ?? currentUser.role}
                   </span>
-                  {currentUser.attendance && currentUser.attendance.total > 0 && (
+                  {currentUser.role === "participant" && currentUser.attendance && (
                     <span
                       className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)] inline-flex items-center gap-1.5"
                       style={{
-                        background: currentUser.attendance.closed ? "var(--success-soft)" : "var(--bg-subtle)",
-                        color: currentUser.attendance.closed ? "var(--success)" : "var(--text-secondary)",
+                        background: currentUser.attendance.closed
+                          ? "var(--success-soft)"
+                          : currentUser.attendance.total === 0
+                            ? "var(--bg-subtle)"
+                            : "var(--accent-peach)",
+                        color: currentUser.attendance.closed
+                          ? "var(--success)"
+                          : "var(--text-primary)",
                         fontWeight: 500,
                       }}
-                      title={`${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`}
+                      title={
+                        currentUser.attendance.total > 0
+                          ? `${currentUser.attendance.present} из ${currentUser.attendance.total} занятий`
+                          : "Посещаемость появится, как только пройдут первые занятия"
+                      }
                     >
                       {currentUser.attendance.closed && <CheckCircle2 size={13} />}
-                      {currentUser.attendance.percentage}%{currentUser.attendance.closed && " · закрыта"}
+                      Посещаемость: {currentUser.attendance.percentage}%
+                      {currentUser.attendance.total > 0 && (
+                        <span style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>
+                          ({currentUser.attendance.present}/{currentUser.attendance.total})
+                        </span>
+                      )}
+                      {currentUser.attendance.closed && " · закрыта"}
                     </span>
                   )}
                   {currentUser.email && (

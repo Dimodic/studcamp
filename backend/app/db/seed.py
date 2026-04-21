@@ -271,12 +271,39 @@ def _seed_user_state(db: Session, snapshot: dict) -> None:
     for update_id in snapshot.get("update_reads", []):
         db.add(UpdateRead(user_id=viewer_id, update_id=update_id, is_read=True))
 
+    seeded_checkins: set[tuple[str, str]] = set()
     for payload in snapshot.get("event_checkins", []):
         db.add(
             EventCheckIn(
                 user_id=payload["user_id"],
                 event_id=payload["event_id"],
                 attendance_status=payload["attendance_status"],
+                source=payload.get("source", "self"),
+            )
+        )
+        seeded_checkins.add((payload["user_id"], payload["event_id"]))
+
+    # Автоматически проставляем viewer-у «confirmed» на большинстве прошедших
+    # занятий, чтобы демо-посещаемость была близка к реальной. Два последних
+    # прошедших события оставляем без отметки — это демонстрирует маркер
+    # «пропущено» в расписании.
+    camp_current_day = snapshot.get("camp", {}).get("current_day", 1)
+    past_events = [
+        event for event in snapshot.get("events", [])
+        if event.get("day", 0) < camp_current_day
+    ]
+    past_events.sort(key=lambda event: (event.get("day", 0), event.get("start_at", "")))
+    skip_last = set(event["id"] for event in past_events[-2:])
+    for event in past_events:
+        key = (viewer_id, event["id"])
+        if key in seeded_checkins or event["id"] in skip_last:
+            continue
+        db.add(
+            EventCheckIn(
+                user_id=viewer_id,
+                event_id=event["id"],
+                attendance_status="confirmed",
+                source="self",
             )
         )
 

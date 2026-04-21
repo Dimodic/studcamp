@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import logoImg from "../assets/logo.png";
@@ -17,10 +17,21 @@ export function Layout() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
+  const mainRef = useRef<HTMLElement | null>(null);
 
   const activePrimaryPath = getActivePrimaryPath(location.pathname);
   const showMobileBottomNav = isMobile && isPrimaryRoute(location.pathname);
   const sidebarWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
+  // Каждый раз при смене маршрута возвращаем main в начало, чтобы при переходе
+  // между вкладками страница не "наследовала" скролл предыдущей. Страницы,
+  // которым нужен свой начальный скролл (например Schedule на текущий день),
+  // делают это в своих эффектах уже после сброса.
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   return (
     <div
@@ -106,6 +117,7 @@ export function Layout() {
       )}
 
       <main
+        ref={mainRef}
         className={`flex-1 overflow-y-auto min-w-0 ${showMobileBottomNav ? "pb-20" : ""}`}
       >
         <Outlet />

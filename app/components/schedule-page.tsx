@@ -105,10 +105,15 @@ function openExternal(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function AttendanceBadge({ attendance }: { attendance?: "confirmed" | "pending" | "not_checked" | null }) {
-  if (!attendance || attendance === "not_checked") {
-    return null;
-  }
+function AttendanceBadge({
+  attendance,
+  eventStatus,
+  isParticipant,
+}: {
+  attendance?: "confirmed" | "pending" | "not_checked" | null;
+  eventStatus: string;
+  isParticipant: boolean;
+}) {
   if (attendance === "confirmed") {
     return (
       <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--success)" }}>
@@ -116,11 +121,21 @@ function AttendanceBadge({ attendance }: { attendance?: "confirmed" | "pending" 
       </span>
     );
   }
-  return (
-    <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--warning)" }}>
-      <AlertTriangle size={13} /> Проверяется
-    </span>
-  );
+  if (attendance === "pending") {
+    return (
+      <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--warning)" }}>
+        <AlertTriangle size={13} /> Проверяется
+      </span>
+    );
+  }
+  if (isParticipant && eventStatus === "completed") {
+    return (
+      <span className="flex items-center gap-1 text-[12px]" style={{ color: "var(--danger)" }}>
+        <AlertTriangle size={13} /> Пропущено
+      </span>
+    );
+  }
+  return null;
 }
 
 interface EventGroup {
@@ -151,13 +166,6 @@ function groupEventsByDay(events: Event[]): EventGroup[] {
   return [...groups.values()]
     .sort((left, right) => left.day - right.day)
     .map((group) => ({ ...group, theme: extractDayTheme(group.events) }));
-}
-
-const SCHEDULE_SCROLL_KEY = "studcamp.schedule.scroll";
-
-function findScrollContainer(): HTMLElement | null {
-  if (typeof document === "undefined") return null;
-  return document.querySelector("main") as HTMLElement | null;
 }
 
 export function SchedulePage() {
@@ -213,31 +221,33 @@ export function SchedulePage() {
     if (!data || didInitialScroll.current || groups.length === 0) {
       return;
     }
-    didInitialScroll.current = true;
-
-    const scrollContainer = findScrollContainer();
-    const savedScroll = sessionStorage.getItem(SCHEDULE_SCROLL_KEY);
-
-    if (savedScroll !== null && scrollContainer) {
-      scrollContainer.scrollTop = Number(savedScroll);
-      return;
-    }
 
     const today = data.ui.currentDay;
     const target = groups.find((group) => group.day === today) ?? groups[0];
-    const node = dayRefs.current.get(target.day);
-    node?.scrollIntoView({ block: "start" });
-  }, [data, groups]);
 
-  useEffect(() => {
-    const scrollContainer = findScrollContainer();
-    if (!scrollContainer) return;
-    const handle = () => {
-      sessionStorage.setItem(SCHEDULE_SCROLL_KEY, String(scrollContainer.scrollTop));
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const trySnap = () => {
+      const node = dayRefs.current.get(target.day);
+      if (node) {
+        node.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
+        didInitialScroll.current = true;
+        return;
+      }
+      attempts += 1;
+      if (attempts < 12) {
+        timer = setTimeout(trySnap, 30);
+      }
     };
-    scrollContainer.addEventListener("scroll", handle, { passive: true });
-    return () => scrollContainer.removeEventListener("scroll", handle);
-  }, [data]);
+
+    // Через setTimeout(0), чтобы сначала отработал сброс main.scrollTop=0
+    // из Layout (родительские effects выполняются ПОСЛЕ дочерних).
+    timer = setTimeout(trySnap, 0);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [data, groups]);
 
   if (!data) {
     return null;
@@ -451,7 +461,11 @@ export function SchedulePage() {
                                         Отменено
                                       </span>
                                     )}
-                                    <AttendanceBadge attendance={event.attendance} />
+                                    <AttendanceBadge
+                                      attendance={event.attendance}
+                                      eventStatus={event.status}
+                                      isParticipant={currentUser.role === "participant"}
+                                    />
                                     {canEditEvent && (
                                       <>
                                         <ActionIconButton

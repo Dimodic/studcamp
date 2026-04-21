@@ -519,6 +519,17 @@ export function HomePage() {
                               <Check size={10} /> отмечено
                             </span>
                           )}
+                          {currentUser.role === "participant" &&
+                            event.attendance !== "confirmed" &&
+                            event.status === "completed" && (
+                              <span
+                                className="text-[10.5px] px-1.5 py-0.5 rounded-full flex items-center gap-1"
+                                style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}
+                                title="Вы не были отмечены на этом занятии"
+                              >
+                                пропущено
+                              </span>
+                            )}
                         </div>
                         <p
                           className="text-[14.5px] mt-0.5 leading-snug"

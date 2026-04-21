@@ -58,9 +58,14 @@ const ICON_RULES: Array<{ pattern: RegExp; key: keyof typeof CATEGORY_ICONS }> =
 ];
 
 function resolveCategoryIcon(category: { icon: string; title: string }): LucideIcon {
-  const direct = CATEGORY_ICONS[category.icon];
-  if (direct) return direct;
-  const haystack = `${category.icon} ${category.title}`;
+  const iconKey = (category.icon ?? "").trim();
+  // "auto" (или пустое значение) — просим систему самой подобрать иконку
+  // по ключевым словам в title. Это поведение по умолчанию.
+  if (iconKey && iconKey !== "auto") {
+    const direct = CATEGORY_ICONS[iconKey];
+    if (direct) return direct;
+  }
+  const haystack = `${iconKey} ${category.title}`;
   for (const rule of ICON_RULES) {
     if (rule.pattern.test(haystack)) return CATEGORY_ICONS[rule.key];
   }

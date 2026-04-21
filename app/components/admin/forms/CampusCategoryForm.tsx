@@ -14,7 +14,9 @@ export interface CampusCategoryFormState {
 
 export function buildCampusCategoryInitial(entity?: Partial<CampusCategory>): CampusCategoryFormState {
   return {
-    icon: entity?.icon ?? "info",
+    // "auto" — система сама подбирает иконку по заголовку
+    // (см. resolveCategoryIcon в campus-page.tsx).
+    icon: entity?.icon ?? "auto",
     title: entity?.title ?? "",
     items:
       entity?.items?.map((item) => ({
@@ -53,7 +55,12 @@ export function CampusCategoryForm({ state, onChange }: CampusCategoryFormProps)
 
   return (
     <>
-      <TextField label="Иконка" value={state.icon} onChange={(value) => onChange({ ...state, icon: value })} />
+      <TextField
+        label="Иконка"
+        value={state.icon}
+        onChange={(value) => onChange({ ...state, icon: value })}
+        placeholder="auto — подберём по заголовку"
+      />
       <TextField label="Заголовок" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
       <div className="space-y-3">
         <div className="flex items-center justify-between">
