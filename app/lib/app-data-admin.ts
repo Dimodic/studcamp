@@ -63,6 +63,32 @@ export interface AdminActions {
   deleteProjectTeam: (teamId: string) => Promise<void>;
   setProjectAssignment: (userId: string, teamId: string | null) => Promise<void>;
   autoDistributeAssignments: () => Promise<{ assigned: number; unassigned: string[] }>;
+  listCamps: () => Promise<
+    Array<{
+      id: string;
+      name: string;
+      shortDesc: string | null;
+      city: string;
+      university: string;
+      startDate: string;
+      endDate: string;
+      status: string;
+      isActive: boolean;
+      participantsCount: number;
+      eventsCount: number;
+    }>
+  >;
+  createCamp: (payload: {
+    name: string;
+    shortDesc?: string | null;
+    city: string;
+    university: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    dayTitles?: Record<string, string> | null;
+  }) => Promise<string>;
+  activateCamp: (campId: string) => Promise<void>;
 }
 
 interface AdminDeps {
@@ -219,6 +245,30 @@ export function useAdminActions({ requireToken, refresh, setError }: AdminDeps):
     return response;
   }, [refresh, requireToken]);
 
+  const listCamps = useCallback<AdminActions["listCamps"]>(async () => {
+    const authToken = requireToken();
+    const response = await api.listCamps(authToken);
+    return response.camps;
+  }, [requireToken]);
+
+  const createCamp = useCallback<AdminActions["createCamp"]>(
+    async (payload) => {
+      const authToken = requireToken();
+      const response = await api.createCamp(authToken, payload);
+      return response.id;
+    },
+    [requireToken],
+  );
+
+  const activateCamp = useCallback<AdminActions["activateCamp"]>(
+    async (campId) => {
+      const authToken = requireToken();
+      await api.activateCamp(authToken, campId);
+      await refresh();
+    },
+    [refresh, requireToken],
+  );
+
   return {
     createAdminEntity,
     updateAdminEntity,
@@ -234,5 +284,8 @@ export function useAdminActions({ requireToken, refresh, setError }: AdminDeps):
     deleteProjectTeam,
     setProjectAssignment,
     autoDistributeAssignments,
+    listCamps,
+    createCamp,
+    activateCamp,
   };
 }

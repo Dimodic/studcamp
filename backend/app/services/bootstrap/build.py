@@ -50,7 +50,14 @@ from .serializers import (
 
 
 def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
-    camp = user.camp or db.scalar(select(Camp).limit(1))
+    # Приоритет: глобально активный кемп > кемп пользователя > первый по id.
+    # Активация меняется через /admin/camps/{id}/activate, переключая всех
+    # участников и преподавателей на новый кемп сразу.
+    camp = (
+        db.scalar(select(Camp).where(Camp.is_active.is_(True)))
+        or user.camp
+        or db.scalar(select(Camp).limit(1))
+    )
     if camp is None:
         raise HTTPException(status_code=503, detail="Camp data is missing")
 

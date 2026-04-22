@@ -25,6 +25,24 @@ class CampSchema(BaseSchema):
     dayTitles: dict[str, str] = Field(default_factory=dict)
 
 
+class CampListItemSchema(BaseSchema):
+    id: str
+    name: str
+    shortDesc: str | None = None
+    city: str
+    university: str
+    startDate: date
+    endDate: date
+    status: str
+    isActive: bool
+    participantsCount: int
+    eventsCount: int
+
+
+class CampListResponseSchema(BaseSchema):
+    camps: list[CampListItemSchema]
+
+
 class PersonSchema(BaseSchema):
     id: str
     name: str

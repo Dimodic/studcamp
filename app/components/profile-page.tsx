@@ -9,12 +9,14 @@ import {
   FolderOpen,
   LogOut,
   MapPin,
+  Repeat,
   Shield,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, PageShell, ProgressRing, SurfaceCard } from "./common";
 import { MagicBlock } from "./profile/MagicBlock";
+import { CampSwitcher } from "./profile/CampSwitcher";
 import { useAppData } from "../lib/app-data";
 import { ROLE_LABELS, ROLE_STYLES } from "../lib/options";
 
@@ -120,12 +122,14 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { data, logout, updateProfilePreferences } = useAppData();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [campSwitcherOpen, setCampSwitcherOpen] = useState(false);
 
   if (!data) {
     return null;
   }
 
   const { currentUser, camp, events } = data;
+  const canSwitchCamps = currentUser.capabilities.canManageUsers;
   const teacherEvents = events.filter((event) => event.teacherIds.includes(currentUser.id));
 
   const handleLogout = async () => {
@@ -257,8 +261,30 @@ export function ProfilePage() {
                 <span>{formatCampDates(camp.dates.start, camp.dates.end)}</span>
               </p>
             </div>
+            {canSwitchCamps && (
+              <button
+                type="button"
+                onClick={() => setCampSwitcherOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[12.5px] px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--bg-card)] shrink-0"
+                style={{
+                  border: "1px solid var(--line-subtle)",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-card)",
+                }}
+              >
+                <Repeat size={13} /> Переключить
+              </button>
+            )}
           </div>
         </SurfaceCard>
+
+        {canSwitchCamps && (
+          <CampSwitcher
+            open={campSwitcherOpen}
+            currentCampId={camp.id}
+            onClose={() => setCampSwitcherOpen(false)}
+          />
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {QUICK_LINKS.map((link) => {

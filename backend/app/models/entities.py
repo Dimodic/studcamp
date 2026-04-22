@@ -96,6 +96,10 @@ class Camp(TimestampMixin, Base):
     project_selection_phase: Mapped[str] = mapped_column(String(32), default="open", nullable=False)
     # { "1": "Вводный день", "2": "День системного программирования", ... }
     day_titles: Mapped[dict[str, str] | None] = mapped_column(JSON)
+    # Только один кемп может быть активным одновременно — именно он
+    # отображается всем участникам и преподавателям. Организатор
+    # переключает его через /admin/camps/{id}/activate.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     users: Mapped[list[User]] = relationship(back_populates="camp")
     events: Mapped[list[Event]] = relationship(back_populates="camp")

@@ -247,6 +247,50 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+  listCamps(token: string) {
+    return request<{
+      camps: Array<{
+        id: string;
+        name: string;
+        shortDesc: string | null;
+        city: string;
+        university: string;
+        startDate: string;
+        endDate: string;
+        status: string;
+        isActive: boolean;
+        participantsCount: number;
+        eventsCount: number;
+      }>;
+    }>(`/admin/camps`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  createCamp(
+    token: string,
+    payload: {
+      name: string;
+      shortDesc?: string | null;
+      city: string;
+      university: string;
+      startDate: string;
+      endDate: string;
+      status: string;
+      dayTitles?: Record<string, string> | null;
+    },
+  ) {
+    return request<{ ok: boolean; id: string }>(`/admin/camps`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+  },
+  activateCamp(token: string, campId: string) {
+    return request<{ ok: boolean }>(`/admin/camps/${campId}/activate`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
   setAttendanceCell(
     token: string,
     payload: { eventId: string; userId: string; status: string | null },

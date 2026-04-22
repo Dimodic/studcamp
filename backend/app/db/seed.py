@@ -91,6 +91,7 @@ def _seed_camp(db: Session, payload: dict[str, Any]) -> None:
             total_days=payload["total_days"],
             project_selection_phase=payload["project_selection_phase"],
             day_titles=payload.get("day_titles"),
+            is_active=True,
         )
     )
 
