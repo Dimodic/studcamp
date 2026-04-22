@@ -18,6 +18,16 @@
     "android:sync": "npm run build && npx cap sync android",
     "android:apk": "npm run build && npx cap sync android && cd android && gradlew.bat assembleDebug"
   },
+  "prettier": {
+    "printWidth": 100,
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "arrowParens": "always",
+    "endOfLine": "lf"
+  },
   "dependencies": {
     "@capacitor/android": "^8.3.1",
     "@capacitor/core": "^8.3.1",

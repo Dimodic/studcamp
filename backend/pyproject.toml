@@ -1,15 +1,51 @@
-# Конфигурация инструментов разработки для бэкенда.
-# Runtime-зависимости — в backend/requirements.txt (pinned).
-# Dev-зависимости — в backend/requirements-dev.txt.
+# Backend package: runtime + dev-зависимости + конфиги инструментов.
+# Обновление версий: `pip install --upgrade <pkg>`, затем `pip freeze | grep`,
+# правишь здесь, прогоняешь pytest, коммитишь.
+
+[project]
+name = "studcamp-backend"
+version = "0.1.0"
+description = "Studcamp FastAPI backend"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.136.0",
+  "uvicorn[standard]==0.44.0",
+  "gunicorn==25.3.0",
+  "sqlalchemy==2.0.49",
+  "alembic==1.18.4",
+  "psycopg[binary]==3.3.3",
+  "pydantic==2.13.3",
+  "pydantic-settings==2.14.0",
+  "httpx==0.28.1",
+  "bcrypt==5.0.0",
+  "pytest==9.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff==0.15.11",
+  "mypy==1.20.2",
+  "coverage==7.13.5",
+  "pre-commit>=4.5,<5",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+# Мы не собираем реальный Python-пакет (backend/ лежит рядом с app/ и
+# импортируется как backend.app.*). pyproject нужен только как единый
+# манифест зависимостей + конфиг инструментов. py-modules = [] говорит
+# setuptools'у не пытаться ничего публиковать.
+[tool.setuptools]
+py-modules = []
 
 [tool.ruff]
-# Python 3.12 соответствует рантайму Docker-образа (см. backend/Dockerfile).
 target-version = "py312"
 line-length = 100
 extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
-# Базовый набор + импорты + bugbear + комплексность + pyupgrade + naming.
 select = [
   "E",   # pycodestyle errors
   "W",   # pycodestyle warnings
@@ -33,14 +69,10 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Pydantic-схемы публичного API намеренно в camelCase (контракт с фронтом).
 "app/schemas/**/*.py" = ["N815"]
-# Inline-Pydantic request-схемы в admin-роутах тоже в camelCase.
 "app/api/routes/**/*.py" = ["N815"]
-# Тесты и seed содержат длинные русскоязычные ассерты.
 "tests/**/*.py" = ["E501", "N802"]
 "alembic/versions/**/*.py" = ["E501"]
-# Alembic env.py — стандартная практика: sys.path manipulation до импортов.
 "alembic/env.py" = ["E402"]
-# Системный промпт LLM — литеральная многострочная строка.
 "app/services/llm_prompt.py" = ["E501"]
 
 [tool.ruff.format]
@@ -50,11 +82,8 @@ indent-style = "space"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-# Alembic и миграции — генерируемый / транзитный код.
 exclude = ["alembic/versions/"]
-# Pydantic v2 поставляет свои стабы; подмодули сторонних либ могут быть без типов.
 ignore_missing_imports = true
-# FastAPI Depends() инжектит функции, которые mypy считает «неопределёнными».
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]

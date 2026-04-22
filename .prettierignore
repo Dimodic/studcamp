@@ -1,13 +1,5 @@
-node_modules
-dist
-android
-backend
-.omx
-.claude
+android/
+backend/tests/fixtures/mock_snapshot.json
+backend/seeds/initial_data.json
 public/badge-bg.jpg
-screenshots
-scripts
-studcamp.db
 package-lock.json
-*.pdf
-*.apk

@@ -5,8 +5,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY backend/requirements.txt ./backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# Извлекаем runtime-зависимости из pyproject.toml и ставим. Dev-группа
+# ([project.optional-dependencies.dev]) в образ не попадает.
+COPY backend/pyproject.toml ./backend/pyproject.toml
+RUN python -c "import tomllib; \
+deps = tomllib.load(open('backend/pyproject.toml', 'rb'))['project']['dependencies']; \
+open('/tmp/reqs.txt', 'w').write('\n'.join(deps))" && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/reqs.txt
 
 COPY backend ./backend
 

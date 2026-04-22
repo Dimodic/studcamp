@@ -11,10 +11,14 @@ dist/
 *.sqlite3
 *.log
 
-# Python
+# Python / tool caches
 __pycache__/
-.pytest_cache/
 *.pyc
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
 
 # Android / Capacitor
 android/.gradle/
@@ -27,6 +31,7 @@ android/local.properties
 
 # Local agent/editor state
 .claude/
+.omx/
 
 # Sessions artifacts
 studcamp.db
