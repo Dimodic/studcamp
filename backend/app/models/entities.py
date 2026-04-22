@@ -5,6 +5,7 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     Date,
     DateTime,
@@ -113,6 +114,9 @@ class User(TimestampMixin, Base):
     email: Mapped[str | None] = mapped_column(String(255), unique=True)
     password_salt: Mapped[str | None] = mapped_column(String(64))
     password_hash: Mapped[str | None] = mapped_column(String(128))
+    # Telegram user id — набивается при первом входе через WebApp. Может быть
+    # None, если пользователь создан через admin-форму без telegram-привязки.
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
     university: Mapped[str | None] = mapped_column(String(255))

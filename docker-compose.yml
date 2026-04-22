@@ -24,6 +24,8 @@ services:
       STUDCAMP_ENV: ${STUDCAMP_ENV:-production}
       STUDCAMP_DATABASE_URL: ${STUDCAMP_DATABASE_URL:-postgresql+psycopg://studcamp:studcamp@db:5432/studcamp}
       STUDCAMP_CORS_ORIGINS: ${STUDCAMP_CORS_ORIGINS:-http://localhost:8080}
+      STUDCAMP_TELEGRAM_BOT_TOKEN: ${STUDCAMP_TELEGRAM_BOT_TOKEN:-}
+      STUDCAMP_TELEGRAM_GROUP_ID: ${STUDCAMP_TELEGRAM_GROUP_ID:-0}
     depends_on:
       db:
         condition: service_healthy

@@ -13,6 +13,7 @@ import { cacheStorage } from "./cache";
 import { type AdminActions, useAdminActions } from "./app-data-admin";
 import { normalizeBootstrap, touchBootstrap } from "./app-data-normalize";
 import type { BootstrapPayload, Event, VisibilityMode } from "./domain";
+import { getTelegramInitData, signalTelegramReady } from "./telegram";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 type SyncStatus = "idle" | "syncing" | "fresh" | "stale" | "error";
@@ -97,15 +98,40 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setData(normalizeBootstrap(cachedBootstrap));
     }
 
-    if (!cachedToken) {
-      setStatus("unauthenticated");
-      setSyncStatus("idle");
+    if (cachedToken) {
+      setToken(cachedToken);
+      setStatus("authenticated");
+      await hydrateWithToken(cachedToken, cachedBootstrap);
       return;
     }
 
-    setToken(cachedToken);
-    setStatus("authenticated");
-    await hydrateWithToken(cachedToken, cachedBootstrap);
+    // Если приложение открыто внутри Telegram — пробуем автоматический вход
+    // через WebApp.initData. initData подписана ботом и проверяется на бэке,
+    // там же проверяется членство пользователя в приватной группе кемпа.
+    const initData = getTelegramInitData();
+    if (initData) {
+      signalTelegramReady();
+      try {
+        const response = await api.telegramLogin(initData);
+        await cacheStorage.setToken(response.token);
+        setToken(response.token);
+        setStatus("authenticated");
+        await hydrateWithToken(response.token, cachedBootstrap);
+        return;
+      } catch (nextError) {
+        setStatus("unauthenticated");
+        setSyncStatus("error");
+        setError(
+          nextError instanceof Error
+            ? nextError.message
+            : "Не удалось авторизоваться через Telegram",
+        );
+        return;
+      }
+    }
+
+    setStatus("unauthenticated");
+    setSyncStatus("idle");
   }, [hydrateWithToken]);
 
   useEffect(() => {

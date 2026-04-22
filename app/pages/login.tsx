@@ -1,23 +1,71 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import logoImg from "../assets/logo.png";
 import { ImageWithFallback, PrimaryButton } from "../components/common";
 import { useAppData } from "../lib/app-data";
+import { isTelegramWebApp } from "../lib/telegram";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, status } = useAppData();
+  const { login, status, error: appError } = useAppData();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const inTelegram = isTelegramWebApp();
 
   if (status === "authenticated") {
     return <Navigate to={from} replace />;
+  }
+
+  // Внутри Telegram форма логина не нужна: auto-login по initData делается
+  // в app-data.tsx. Показываем спиннер пока идёт проверка или ошибку, если
+  // пользователь не в группе кемпа.
+  if (inTelegram) {
+    return (
+      <div
+        className="min-h-dvh flex items-center justify-center px-6"
+        style={{ background: "var(--bg-app)", fontFamily: "var(--font-ui)" }}
+      >
+        <div className="max-w-sm w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-[10px] overflow-hidden mx-auto">
+            <ImageWithFallback
+              src={logoImg}
+              alt="Яндекс Образование"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {status === "loading" ? (
+            <>
+              <Loader2
+                size={20}
+                className="mx-auto animate-spin"
+                style={{ color: "var(--text-tertiary)" }}
+              />
+              <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
+                Проверяем доступ к кемпу…
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-[20px]" style={{ color: "var(--text-primary)" }}>
+                Нет доступа
+              </h2>
+              <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
+                {appError ?? "Не удалось авторизоваться через Telegram."}
+              </p>
+              <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+                Попросите организатора добавить вас в группу кемпа и откройте приложение заново.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
 
   const handleSubmit = async () => {

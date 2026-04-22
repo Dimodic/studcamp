@@ -275,6 +275,10 @@ class LoginRequestSchema(BaseModel):
     password: str
 
 
+class TelegramLoginRequestSchema(BaseModel):
+    initData: str
+
+
 class LoginResponseSchema(BaseSchema):
     token: str
     expiresAt: datetime

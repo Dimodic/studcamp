@@ -52,6 +52,14 @@ class Settings(BaseSettings):
     login_rate_limit_per_minute: int = 10
     llm_rate_limit_per_minute: int = 20
 
+    # Telegram WebApp (см. core/telegram_auth.py и services/telegram_membership.py).
+    # Если bot_token пуст — endpoint /auth/telegram вернёт 503 (фича отключена).
+    telegram_bot_token: str = ""
+    # Для супергрупп — отрицательный id вида -100xxxxxxxxxx. 0 = не настроено.
+    telegram_group_id: int = 0
+    # initData с auth_date старше этого лимита считается протухшей.
+    telegram_auth_max_age_seconds: int = 3600
+
     @property
     def cors_origins(self) -> tuple[str, ...]:
         return _split_csv(self.cors_origins_raw)

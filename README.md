@@ -77,6 +77,66 @@ docker compose up -d --build
 - `STUDCAMP_CORS_ORIGINS` — если фронт и API на разных хостах.
 - `POSTGRES_*` — креды БД.
 
+### Telegram WebApp-авторизация
+
+Вместо email/password — вход через Telegram с проверкой, что пользователь
+состоит в закрытой группе кемпа. Форма логина внутри Telegram не показывается:
+auto-login происходит по `window.Telegram.WebApp.initData`.
+
+**Настройка бота (однократно)**:
+
+1. В [@BotFather](https://t.me/BotFather) — `/newbot`, сохранить bot-token.
+2. `/newapp` → выбрать бота → короткое имя, title, URL = `https://<ваш-домен>/`.
+3. `/setmenubutton` → ссылка на тот же URL (кнопка «≡» у чата с ботом).
+4. `/setprivacy` → Disabled (чтобы бот видел состав группы).
+5. Добавить бота **в приватную группу кемпа** (хотя бы участником; админом
+   надёжнее — `getChatMember` всегда работает).
+6. Узнать `chat_id` группы: после любого сообщения от бота в ней —
+   `curl https://api.telegram.org/bot<TOKEN>/getUpdates`, брать
+   `message.chat.id` (для супергрупп — отрицательный `-100…`).
+
+**Прописать в `.env`**:
+
+```
+STUDCAMP_TELEGRAM_BOT_TOKEN=123456789:AAE...
+STUDCAMP_TELEGRAM_GROUP_ID=-1002234567890
+```
+
+Если эти переменные пусты — endpoint `/auth/telegram` отвечает 503, и
+приложение работает только через email/password (удобно для dev).
+
+**HTTPS обязателен**. Telegram открывает WebApp только по `https://`.
+Самый простой способ — Caddy перед docker-compose:
+
+```
+# /etc/caddy/Caddyfile
+camp.example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+```
+apt install caddy && systemctl enable --now caddy
+```
+
+Caddy автоматически выпустит сертификат от Let's Encrypt и будет
+перенаправлять `https://camp.example.com` → `http://localhost:8080`.
+Альтернативы: Cloudflare Tunnel (без открытых портов), nginx + certbot.
+
+**Как оно работает**:
+
+1. Пользователь открывает WebApp в Telegram.
+2. Фронт читает `window.Telegram.WebApp.initData` — подписанную ботом
+   строку с `user.id`, `username`, `first_name`, `auth_date`, `hash`.
+3. Фронт шлёт initData в `POST /api/v1/auth/telegram`.
+4. Backend проверяет HMAC-SHA256 подпись bot-токеном, что initData свежая
+   (≤ 1 час), и дёргает Bot API `getChatMember(group_id, user.id)`.
+5. Если в группе — upsert `User` по `telegram_id`, выдаёт сессионный токен;
+   если нет — 403 и «Нет доступа» на экране.
+
+Для dev-режима вне Telegram (и в CI) обычный `POST /auth/login` с email
+оставлен как есть.
+
 ### Обновление
 
 ```

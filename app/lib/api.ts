@@ -88,6 +88,12 @@ export const api = {
       body: JSON.stringify({ email, password }),
     });
   },
+  telegramLogin(initData: string) {
+    return request<LoginResponse>("/auth/telegram", {
+      method: "POST",
+      body: JSON.stringify({ initData }),
+    });
+  },
   logout(token: string) {
     return request<{ ok: boolean }>("/auth/logout", {
       method: "POST",
