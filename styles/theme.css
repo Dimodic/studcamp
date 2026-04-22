@@ -87,6 +87,13 @@
     background: var(--bg-subtle);
   }
 
+  .surface-input {
+    background: var(--bg-input);
+  }
+
+  /* ── Text semantic utilities ──
+     Соответствуют --text-* переменным. Используй вместо
+     style={{ color: "var(--text-primary)" }} где возможно. */
   .text-foreground {
     color: var(--text-primary);
   }
@@ -99,8 +106,30 @@
     color: var(--text-tertiary);
   }
 
+  .text-inverted {
+    color: var(--text-inverted);
+  }
+
+  /* ── Background semantic utilities ── */
+  .bg-app {
+    background: var(--bg-app);
+  }
+
+  .bg-card {
+    background: var(--bg-card);
+  }
+
+  .bg-subtle {
+    background: var(--bg-subtle);
+  }
+
+  /* ── Border semantic utilities ── */
   .border-line {
     border-color: var(--line-subtle);
+  }
+
+  .border-strong {
+    border-color: var(--line-strong);
   }
 }
 
