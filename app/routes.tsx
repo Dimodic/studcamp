@@ -3,7 +3,7 @@ import { Layout } from "./components/layout";
 import { HomePage } from "./components/home-page";
 import { SchedulePage } from "./components/schedule-page";
 import { PeoplePage } from "./components/people-page";
-import { ProjectsPage } from "./components/projects-page";
+import { ProjectsPage } from "./components/projects";
 import { ProfilePage } from "./components/profile-page";
 import { BadgePage } from "./components/badge-page";
 import { LoginPage } from "./components/login-page";
