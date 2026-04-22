@@ -1,17 +1,18 @@
 import { createBrowserRouter, Navigate } from "react-router";
+
 import { Layout } from "./components/layout";
-import { HomePage } from "./components/home";
-import { SchedulePage } from "./components/schedule";
-import { PeoplePage } from "./components/people";
-import { ProjectsPage } from "./components/projects";
-import { ProfilePage } from "./components/profile-page";
-import { BadgePage } from "./components/badge-page";
-import { LoginPage } from "./components/login-page";
-import { DocumentsPage } from "./components/documents-page";
-import { CampusPage } from "./components/campus-page";
-import { MaterialsPage } from "./components/materials";
-import { AttendancePage } from "./components/attendance";
 import { RequireAuth } from "./components/auth-guard";
+import { AttendancePage } from "./pages/attendance";
+import { BadgePage } from "./pages/badge";
+import { CampusPage } from "./pages/campus";
+import { DocumentsPage } from "./pages/documents";
+import { HomePage } from "./pages/home";
+import { LoginPage } from "./pages/login";
+import { MaterialsPage } from "./pages/materials";
+import { PeoplePage } from "./pages/people";
+import { ProfilePage } from "./pages/profile";
+import { ProjectsPage } from "./pages/projects";
+import { SchedulePage } from "./pages/schedule";
 
 function ProtectedLayout() {
   return (

@@ -2,8 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AppDataProvider } from "./lib/app-data";
-import "../styles/tailwind.css";
-import "../styles/theme.css";
+import "./styles.css";
 
 const container = document.getElementById("root");
 if (!container) {
