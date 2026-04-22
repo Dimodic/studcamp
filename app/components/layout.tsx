@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import logoImg from "../assets/logo.png";
 import { useIsMobile } from "../hooks/useMobile";
-import { getActivePrimaryPath, isPrimaryRoute, navigationItems } from "../lib/navigation";
+import { useAppData } from "../lib/app-data";
+import {
+  filterNavigation,
+  getActivePrimaryPath,
+  isPrimaryRoute,
+  navigationItems,
+} from "../lib/navigation";
 
 const COLLAPSED_WIDTH = "4.5rem";
 const EXPANDED_WIDTH = "16rem";
@@ -12,8 +18,15 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { data } = useAppData();
   const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
+
+  const canManageUsers = data?.currentUser.capabilities.canManageUsers ?? false;
+  const visibleNav = useMemo(
+    () => filterNavigation(navigationItems, { canManageUsers }),
+    [canManageUsers],
+  );
 
   const activePrimaryPath = getActivePrimaryPath(location.pathname);
   const showMobileBottomNav = isMobile && isPrimaryRoute(location.pathname);
@@ -82,7 +95,7 @@ export function Layout() {
 
           <nav className="flex-1 overflow-y-auto px-3 py-2">
             <ul className="space-y-0.5">
-              {navigationItems.map((item) => {
+              {visibleNav.map((item) => {
                 const active = activePrimaryPath === item.path;
                 return (
                   <li key={item.path}>

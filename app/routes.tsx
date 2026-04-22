@@ -10,6 +10,7 @@ import { LoginPage } from "./components/login-page";
 import { DocumentsPage } from "./components/documents-page";
 import { CampusPage } from "./components/campus-page";
 import { MaterialsPage } from "./components/materials";
+import { AttendancePage } from "./components/attendance";
 import { RequireAuth } from "./components/auth-guard";
 
 function ProtectedLayout() {
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { path: "documents", Component: DocumentsPage },
       { path: "campus", Component: CampusPage },
       { path: "materials", Component: MaterialsPage },
+      { path: "attendance", Component: AttendancePage },
     ],
   },
   { path: "/login", Component: LoginPage },

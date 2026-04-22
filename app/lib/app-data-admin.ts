@@ -43,6 +43,14 @@ export interface AdminActions {
     unmatched: string[];
   }>;
   markAttendance: (eventId: string, userIds: string[]) => Promise<void>;
+  getAttendanceMatrix: () => Promise<
+    Array<{ eventId: string; userId: string; status: string; source: string | null }>
+  >;
+  setAttendanceCell: (
+    eventId: string,
+    userId: string,
+    status: "confirmed" | "pending" | null,
+  ) => Promise<{ status: string }>;
   setEntityVisibility: (
     resource: AdminResourcePath,
     entityId: string,
@@ -133,6 +141,24 @@ export function useAdminActions({ requireToken, refresh, setError }: AdminDeps):
     [refresh, requireToken],
   );
 
+  const getAttendanceMatrix = useCallback<AdminActions["getAttendanceMatrix"]>(async () => {
+    const authToken = requireToken();
+    const response = await api.getAttendanceMatrix(authToken);
+    return response.cells;
+  }, [requireToken]);
+
+  const setAttendanceCell = useCallback<AdminActions["setAttendanceCell"]>(
+    async (eventId, userId, status) => {
+      const authToken = requireToken();
+      const response = await api.setAttendanceCell(authToken, { eventId, userId, status });
+      // Обновлять bootstrap не нужно — страница посещаемости управляет
+      // локальным состоянием матрицы сама. Для текущего юзера это тоже
+      // не критично (статус в bootstrap заполняется только для него).
+      return { status: response.status };
+    },
+    [requireToken],
+  );
+
   const setEntityVisibility = useCallback<AdminActions["setEntityVisibility"]>(
     async (resource, entityId, hidden) => {
       const authToken = requireToken();
@@ -200,6 +226,8 @@ export function useAdminActions({ requireToken, refresh, setError }: AdminDeps):
     parseLlmContent,
     parseAttendancePhoto,
     markAttendance,
+    getAttendanceMatrix,
+    setAttendanceCell,
     setEntityVisibility,
     setProjectPhase,
     createProjectTeam,

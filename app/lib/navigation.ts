@@ -1,10 +1,19 @@
-import { Calendar, FolderKanban, Home, User, Users, type LucideIcon } from "lucide-react";
+import {
+  Calendar,
+  ClipboardCheck,
+  FolderKanban,
+  Home,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export type NavigationItem = {
   path: string;
   icon: LucideIcon;
   label: string;
   isPrimary: boolean;
+  organizerOnly?: boolean;
 };
 
 export const navigationItems: NavigationItem[] = [
@@ -12,6 +21,13 @@ export const navigationItems: NavigationItem[] = [
   { path: "/schedule", icon: Calendar, label: "Расписание", isPrimary: true },
   { path: "/people", icon: Users, label: "Люди", isPrimary: true },
   { path: "/projects", icon: FolderKanban, label: "Проекты", isPrimary: true },
+  {
+    path: "/attendance",
+    icon: ClipboardCheck,
+    label: "Посещаемость",
+    isPrimary: true,
+    organizerOnly: true,
+  },
   { path: "/profile", icon: User, label: "Профиль", isPrimary: true },
 ];
 
@@ -25,4 +41,11 @@ export function isPrimaryRoute(pathname: string) {
 
 export function getActivePrimaryPath(pathname: string) {
   return isPrimaryRoute(pathname) ? pathname : null;
+}
+
+export function filterNavigation(
+  items: NavigationItem[],
+  { canManageUsers }: { canManageUsers: boolean },
+): NavigationItem[] {
+  return items.filter((item) => !item.organizerOnly || canManageUsers);
 }

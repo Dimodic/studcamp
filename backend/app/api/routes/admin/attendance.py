@@ -60,6 +60,27 @@ class AttendanceBulkMarkResponse(BaseModel):
     marked: int
 
 
+class AttendanceCell(BaseModel):
+    eventId: str
+    userId: str
+    status: str  # "confirmed" | "pending" | "not_checked"
+    source: str | None = None
+
+
+class AttendanceMatrixResponse(BaseModel):
+    cells: list[AttendanceCell]
+
+
+class AttendanceCellUpdate(BaseModel):
+    eventId: str
+    userId: str
+    # "confirmed" / "pending" — upsert; null / "not_checked" — удалить запись.
+    status: str | None = None
+
+
+_ALLOWED_STATUSES = {"confirmed", "pending", "not_checked"}
+
+
 ATTENDANCE_SYSTEM_PROMPT = """Ты помощник организатора кемпа. Тебе присылают фотографии листков
 посещаемости (обычно таблица: колонка ФИО + колонка подпись участника).
 Твоя задача — по фото понять, кто из участников РАСПИСАЛСЯ за присутствие.
@@ -261,3 +282,68 @@ def mark_attendance(
         count += 1
     db.commit()
     return AttendanceBulkMarkResponse(ok=True, marked=count)
+
+
+@router.get("/matrix", response_model=AttendanceMatrixResponse)
+def get_attendance_matrix(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AttendanceMatrixResponse:
+    """Полная матрица {event × user → статус} для organizer-таблицы."""
+    require_organizer(current_user)
+    cells = [
+        AttendanceCell(
+            eventId=row.event_id,
+            userId=row.user_id,
+            status=row.attendance_status,
+            source=row.source,
+        )
+        for row in db.scalars(select(EventCheckIn).order_by(EventCheckIn.id.asc()))
+    ]
+    return AttendanceMatrixResponse(cells=cells)
+
+
+@router.put("/cell", response_model=AttendanceCell)
+def set_attendance_cell(
+    payload: AttendanceCellUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AttendanceCell:
+    """Upsert (confirmed/pending) или удалить одну ячейку посещаемости."""
+    require_organizer(current_user)
+    event = get_or_404(db, Event, payload.eventId)
+    user = get_or_404(db, User, payload.userId)
+    if user.camp_id != event.camp_id:
+        raise HTTPException(status_code=400, detail="Пользователь не из этого кемпа")
+
+    existing = db.scalar(
+        select(EventCheckIn).where(
+            EventCheckIn.event_id == event.id,
+            EventCheckIn.user_id == user.id,
+        )
+    )
+
+    status = (payload.status or "").strip() or None
+    if status is None or status == "not_checked":
+        if existing is not None:
+            db.delete(existing)
+            db.commit()
+        return AttendanceCell(eventId=event.id, userId=user.id, status="not_checked", source=None)
+
+    if status not in _ALLOWED_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Недопустимый статус: {status}")
+
+    if existing is None:
+        existing = EventCheckIn(
+            user_id=user.id,
+            event_id=event.id,
+            attendance_status=status,
+            source="manual",
+        )
+        db.add(existing)
+    else:
+        existing.attendance_status = status
+        existing.source = "manual"
+        db.add(existing)
+    db.commit()
+    return AttendanceCell(eventId=event.id, userId=user.id, status=status, source=existing.source)

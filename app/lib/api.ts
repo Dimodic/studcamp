@@ -235,6 +235,33 @@ export const api = {
       body: JSON.stringify({ eventId, userIds }),
     });
   },
+  getAttendanceMatrix(token: string) {
+    return request<{
+      cells: Array<{
+        eventId: string;
+        userId: string;
+        status: string;
+        source: string | null;
+      }>;
+    }>(`/admin/attendance/matrix`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  setAttendanceCell(
+    token: string,
+    payload: { eventId: string; userId: string; status: string | null },
+  ) {
+    return request<{
+      eventId: string;
+      userId: string;
+      status: string;
+      source: string | null;
+    }>(`/admin/attendance/cell`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+  },
   setEntityVisibility(
     token: string,
     resource: AdminResourcePath,

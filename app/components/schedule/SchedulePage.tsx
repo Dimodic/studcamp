@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { CalendarDays, ClipboardCheck } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 import { PageShell, SurfaceCard } from "../common";
 import { useAppData } from "../../lib/app-data";
 import { AdminEditorModal, ADMIN_PATHS, ActionIconButton, type AdminEntityKind } from "../admin-ui";
-import { AttendanceUploader } from "./AttendanceUploader";
 import { DaySection } from "./DaySection";
 import { DaySidebar } from "./DaySidebar";
 import { groupEventsByDay } from "./types";
@@ -22,7 +21,6 @@ export function SchedulePage() {
     setEntityVisibility,
   } = useAppData();
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [attendanceEventId, setAttendanceEventId] = useState<string | null>(null);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
     mode: "create" | "edit";
@@ -128,18 +126,6 @@ export function SchedulePage() {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {currentUser.capabilities.canManageAll && (
-                <button
-                  type="button"
-                  onClick={() => setAttendanceEventId(data.events[0]?.id ?? "")}
-                  aria-label="Отметить посещаемость"
-                  title="Отметить посещаемость по фото"
-                  className="h-9 px-3 text-[13px] rounded-[var(--radius-md)] border flex items-center gap-1.5 transition-colors hover:bg-[var(--bg-subtle)]"
-                  style={{ borderColor: "var(--line-subtle)", color: "var(--text-secondary)" }}
-                >
-                  <ClipboardCheck size={15} /> Листок
-                </button>
-              )}
               {currentUser.capabilities.canCreateEvents && (
                 <ActionIconButton
                   kind="plus"
@@ -194,13 +180,6 @@ export function SchedulePage() {
             dayRefs={dayRefs}
           />
         </div>
-
-        <AttendanceUploader
-          events={data.events}
-          open={attendanceEventId !== null}
-          defaultEventId={attendanceEventId ?? undefined}
-          onClose={() => setAttendanceEventId(null)}
-        />
 
         <AdminEditorModal
           open={adminState !== null}
