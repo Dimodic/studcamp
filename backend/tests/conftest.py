@@ -27,6 +27,7 @@ def db_session(tmp_path: Path) -> Generator[Session, None, None]:
     finally:
         session.close()
         Base.metadata.drop_all(bind=engine)
+        engine.dispose()  # закрыть connection pool, иначе ResourceWarning
 
 
 @pytest.fixture()

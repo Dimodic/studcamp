@@ -10,6 +10,8 @@ interface StoryViewerProps {
   onMarkRead: (id: string) => void;
 }
 
+const DURATION = 6000;
+
 export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryViewerProps) {
   const [storyIdx, setStoryIdx] = useState(startIndex);
   const [slideIdx, setSlideIdx] = useState(0);
@@ -18,27 +20,9 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
 
   const story = stories[storyIdx];
   const slide = story?.slides[slideIdx];
-  const DURATION = 6000;
-
-  useEffect(() => {
-    onMarkRead(story.id);
-  }, [storyIdx]);
-
-  useEffect(() => {
-    setProgress(0);
-    const start = Date.now();
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - start;
-      setProgress(Math.min(elapsed / DURATION, 1));
-      if (elapsed >= DURATION) {
-        clearInterval(timer);
-        goNext();
-      }
-    }, 30);
-    return () => clearInterval(timer);
-  }, [storyIdx, slideIdx]);
 
   const goNext = useCallback(() => {
+    if (!story) return;
     if (slideIdx < story.slides.length - 1) {
       setSlideIdx((s) => s + 1);
     } else if (storyIdx < stories.length - 1) {
@@ -57,6 +41,26 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
       setSlideIdx(0);
     }
   }, [slideIdx, storyIdx]);
+
+  // Отмечаем сторис прочитанным при её открытии.
+  useEffect(() => {
+    if (story) onMarkRead(story.id);
+  }, [onMarkRead, story]);
+
+  // Таймер слайда: сбрасывает прогресс и автопереходит дальше по истечении DURATION.
+  useEffect(() => {
+    setProgress(0);
+    const start = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - start;
+      setProgress(Math.min(elapsed / DURATION, 1));
+      if (elapsed >= DURATION) {
+        clearInterval(timer);
+        goNext();
+      }
+    }, 30);
+    return () => clearInterval(timer);
+  }, [storyIdx, slideIdx, goNext]);
 
   if (!story || !slide) return null;
 

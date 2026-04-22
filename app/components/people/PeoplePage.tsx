@@ -81,11 +81,13 @@ export function PeoplePage() {
   }, [data, location.search, navigate]);
 
   // ── Derived state — считаем до ранних return, чтобы хуки были стабильны.
-  const sourcePeople = data
-    ? data.currentUser.capabilities.canManageUsers
-      ? data.adminUsers
-      : data.people
-    : [];
+  // Оборачиваем sourcePeople в useMemo, чтобы ссылка на массив была
+  // стабильна между рендерами и не тригерила downstream-useMemo впустую.
+  const sourcePeople = useMemo(
+    () =>
+      data ? (data.currentUser.capabilities.canManageUsers ? data.adminUsers : data.people) : [],
+    [data],
+  );
   const counts = useMemo(() => {
     const result = { all: sourcePeople.length, participant: 0, teacher: 0, organizer: 0 };
     for (const person of sourcePeople) {

@@ -41,13 +41,16 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      // Новые opinion-правила react-hooks@7: в унаследованном коде их
-      // массово ловить бессмысленно. Переводим в warn — чиним постепенно
-      // в последующих партиях рефакторинга (gd-components, app-data split).
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
-      "react-hooks/immutability": "warn",
+      // HMR-friendliness hint — полезен, но у нас нет неиспользуемых
+      // больших функциональных экспортов из page-файлов, а у admin-forms
+      // co-located build-initializer — сознательный выбор архитектуры.
+      "react-refresh/only-export-components": "off",
+      // Opinion-правила React Compiler / react-hooks@7. Не ловят
+      // функциональные баги — только стилевые предпочтения нового компилятора.
+      // Включим позже, когда/если подключим официальный React Compiler.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/immutability": "off",
       // Пробелы в пустых пропсах/объектах не нужны.
       "@typescript-eslint/no-empty-object-type": [
         "error",
