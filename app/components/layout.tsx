@@ -138,7 +138,7 @@ export function Layout() {
           style={{ background: "var(--bg-card)", borderColor: "var(--line-subtle)" }}
         >
           <div className="max-w-lg mx-auto flex">
-            {navigationItems.map((item) => {
+            {visibleNav.map((item) => {
               const active = activePrimaryPath === item.path;
               return (
                 <button
