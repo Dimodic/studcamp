@@ -3,24 +3,36 @@ from __future__ import annotations
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.db.base import Base
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     participant = "participant"
     teacher = "teacher"
     organizer = "organizer"
 
 
-class VisibilityMode(str, enum.Enum):
+class VisibilityMode(enum.StrEnum):
     name_only = "name_only"
     name_plus_fields = "name_plus_fields"
 
 
-class EventStatus(str, enum.Enum):
+class EventStatus(enum.StrEnum):
     upcoming = "upcoming"
     in_progress = "in_progress"
     completed = "completed"
@@ -28,27 +40,27 @@ class EventStatus(str, enum.Enum):
     cancelled = "cancelled"
 
 
-class StoryType(str, enum.Enum):
+class StoryType(enum.StrEnum):
     info = "info"
     urgent = "urgent"
     navigation = "navigation"
     project = "project"
 
 
-class UpdateType(str, enum.Enum):
+class UpdateType(enum.StrEnum):
     change = "change"
     info = "info"
     urgent = "urgent"
 
 
-class DocumentStatus(str, enum.Enum):
+class DocumentStatus(enum.StrEnum):
     done = "done"
     in_progress = "in_progress"
     blocked = "blocked"
     not_started = "not_started"
 
 
-class MaterialType(str, enum.Enum):
+class MaterialType(enum.StrEnum):
     presentation = "presentation"
     recording = "recording"
     guide = "guide"
@@ -57,7 +69,9 @@ class MaterialType(str, enum.Enum):
 
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -83,8 +97,8 @@ class Camp(TimestampMixin, Base):
     # { "1": "Вводный день", "2": "День системного программирования", ... }
     day_titles: Mapped[dict[str, str] | None] = mapped_column(JSON)
 
-    users: Mapped[list["User"]] = relationship(back_populates="camp")
-    events: Mapped[list["Event"]] = relationship(back_populates="camp")
+    users: Mapped[list[User]] = relationship(back_populates="camp")
+    events: Mapped[list[Event]] = relationship(back_populates="camp")
 
 
 class User(TimestampMixin, Base):
@@ -111,14 +125,30 @@ class User(TimestampMixin, Base):
     show_in_people: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     camp: Mapped[Camp | None] = relationship(back_populates="users")
-    sessions: Mapped[list["Session"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    documents: Mapped[list["Document"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    story_reads: Mapped[list["StoryRead"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    update_reads: Mapped[list["UpdateRead"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    event_checkins: Mapped[list["EventCheckIn"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    project_preferences: Mapped[list["ProjectPreference"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    room_assignment: Mapped["RoomAssignment | None"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
-    teaching_event_links: Mapped[list["EventTeacher"]] = relationship(back_populates="teacher", cascade="all, delete-orphan")
+    sessions: Mapped[list[Session]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    documents: Mapped[list[Document]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    story_reads: Mapped[list[StoryRead]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    update_reads: Mapped[list[UpdateRead]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    event_checkins: Mapped[list[EventCheckIn]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    project_preferences: Mapped[list[ProjectPreference]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    room_assignment: Mapped[RoomAssignment | None] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    teaching_event_links: Mapped[list[EventTeacher]] = relationship(
+        back_populates="teacher", cascade="all, delete-orphan"
+    )
 
 
 class Session(TimestampMixin, Base):
@@ -152,19 +182,29 @@ class Event(TimestampMixin, Base):
     is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     camp: Mapped[Camp] = relationship(back_populates="events")
-    checkins: Mapped[list["EventCheckIn"]] = relationship(back_populates="event", cascade="all, delete-orphan")
-    attached_materials: Mapped[list["Material"]] = relationship(back_populates="event")
-    resources: Mapped[list["Resource"]] = relationship(back_populates="event")
-    teacher_links: Mapped[list["EventTeacher"]] = relationship(back_populates="event", cascade="all, delete-orphan")
+    checkins: Mapped[list[EventCheckIn]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+    attached_materials: Mapped[list[Material]] = relationship(back_populates="event")
+    resources: Mapped[list[Resource]] = relationship(back_populates="event")
+    teacher_links: Mapped[list[EventTeacher]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
 
 
 class EventTeacher(TimestampMixin, Base):
     __tablename__ = "event_teachers"
-    __table_args__ = (UniqueConstraint("event_id", "teacher_id", name="uq_event_teachers_event_teacher"),)
+    __table_args__ = (
+        UniqueConstraint("event_id", "teacher_id", name="uq_event_teachers_event_teacher"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
-    teacher_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False
+    )
+    teacher_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
 
     event: Mapped[Event] = relationship(back_populates="teacher_links")
     teacher: Mapped[User] = relationship(back_populates="teaching_event_links")
@@ -176,8 +216,12 @@ class EventCheckIn(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
-    attendance_status: Mapped[str] = mapped_column(String(32), default="not_checked", nullable=False)
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False
+    )
+    attendance_status: Mapped[str] = mapped_column(
+        String(32), default="not_checked", nullable=False
+    )
     # Откуда пришла отметка: "self" (участник сам), "sheet" (LLM-парсинг фото
     # листка посещаемости), "manual" (организатор поставил вручную).
     source: Mapped[str] = mapped_column(String(16), default="self", nullable=False)
@@ -204,16 +248,22 @@ class Project(TimestampMixin, Base):
     mentor_work_format: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    preferences: Mapped[list["ProjectPreference"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    preferences: Mapped[list[ProjectPreference]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
 
 
 class ProjectPreference(TimestampMixin, Base):
     __tablename__ = "project_preferences"
-    __table_args__ = (UniqueConstraint("user_id", "project_id", name="uq_project_preferences_user_project"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "project_id", name="uq_project_preferences_user_project"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="project_preferences")
@@ -224,13 +274,17 @@ class ProjectTeam(TimestampMixin, Base):
     """Команда внутри проекта. Команд у проекта может быть несколько (1, 2, …)."""
 
     __tablename__ = "project_teams"
-    __table_args__ = (UniqueConstraint("project_id", "number", name="uq_project_teams_project_number"),)
+    __table_args__ = (
+        UniqueConstraint("project_id", "number", name="uq_project_teams_project_number"),
+    )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
     number: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    assignments: Mapped[list["ProjectAssignment"]] = relationship(
+    assignments: Mapped[list[ProjectAssignment]] = relationship(
         back_populates="team", cascade="all, delete-orphan"
     )
 
@@ -243,7 +297,9 @@ class ProjectAssignment(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    team_id: Mapped[str] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False)
+    team_id: Mapped[str] = mapped_column(
+        ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False
+    )
 
     team: Mapped[ProjectTeam] = relationship(back_populates="assignments")
 
@@ -258,7 +314,9 @@ class Story(TimestampMixin, Base):
     slides: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
     is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    reads: Mapped[list["StoryRead"]] = relationship(back_populates="story", cascade="all, delete-orphan")
+    reads: Mapped[list[StoryRead]] = relationship(
+        back_populates="story", cascade="all, delete-orphan"
+    )
 
 
 class StoryRead(TimestampMixin, Base):
@@ -267,7 +325,9 @@ class StoryRead(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    story_id: Mapped[str] = mapped_column(ForeignKey("stories.id", ondelete="CASCADE"), nullable=False)
+    story_id: Mapped[str] = mapped_column(
+        ForeignKey("stories.id", ondelete="CASCADE"), nullable=False
+    )
     is_read: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="story_reads")
@@ -284,7 +344,9 @@ class OrgUpdate(TimestampMixin, Base):
     type: Mapped[UpdateType] = mapped_column(Enum(UpdateType), nullable=False)
     is_hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    reads: Mapped[list["UpdateRead"]] = relationship(back_populates="update", cascade="all, delete-orphan")
+    reads: Mapped[list[UpdateRead]] = relationship(
+        back_populates="update", cascade="all, delete-orphan"
+    )
 
 
 class UpdateRead(TimestampMixin, Base):
@@ -293,7 +355,9 @@ class UpdateRead(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    update_id: Mapped[str] = mapped_column(ForeignKey("org_updates.id", ondelete="CASCADE"), nullable=False)
+    update_id: Mapped[str] = mapped_column(
+        ForeignKey("org_updates.id", ondelete="CASCADE"), nullable=False
+    )
     is_read: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="update_reads")
@@ -329,7 +393,9 @@ class RoomAssignment(TimestampMixin, Base):
     __tablename__ = "room_assignments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
     number: Mapped[str] = mapped_column(String(32), nullable=False)
     floor: Mapped[int] = mapped_column(Integer, nullable=False)
     building: Mapped[str] = mapped_column(String(255), nullable=False)

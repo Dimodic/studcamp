@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -90,7 +90,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
 export function CampusPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } =
+    useAppData();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
@@ -102,16 +103,22 @@ export function CampusPage() {
   useEffect(() => {
     if (!data) return;
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get("admin") === "create-campus-category" && data.currentUser.capabilities.canManageCampus) {
+    if (
+      searchParams.get("admin") === "create-campus-category" &&
+      data.currentUser.capabilities.canManageCampus
+    ) {
       setAdminState({ kind: "campusCategory", mode: "create" });
-      navigate("/campus", { replace: true });
+      void navigate("/campus", { replace: true });
     }
   }, [data, location.search, navigate]);
 
   if (!data) return null;
 
   const { campusCategories, room, currentUser } = data;
-  const eventOptions = data.events.map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
+  const eventOptions = data.events.map((event) => ({
+    id: event.id,
+    label: `${event.title} · ${event.date}`,
+  }));
 
   return (
     <PageShell size="wide">
@@ -147,16 +154,17 @@ export function CampusPage() {
               <div className="flex items-center gap-2.5 mb-4">
                 <div
                   className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                  style={
-                    {
-                      background: "color-mix(in srgb, var(--brand) 18%, transparent)",
-                      color: "var(--brand-contrast)",
-                    } as CSSProperties
-                  }
+                  style={{
+                    background: "color-mix(in srgb, var(--brand) 18%, transparent)",
+                    color: "var(--brand-contrast)",
+                  }}
                 >
                   <Key size={18} style={{ color: "var(--brand)" }} />
                 </div>
-                <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                <p
+                  className="text-[16px]"
+                  style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                >
                   Моя комната
                 </p>
               </div>
@@ -172,7 +180,10 @@ export function CampusPage() {
                     className="rounded-[var(--radius-md)] p-3 text-center"
                     style={{ background: "var(--bg-subtle)" }}
                   >
-                    <p className="text-[22px] leading-none mb-1" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                    <p
+                      className="text-[22px] leading-none mb-1"
+                      style={{ color: "var(--text-primary)", fontWeight: 700 }}
+                    >
                       {item.value}
                     </p>
                     <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
@@ -182,13 +193,27 @@ export function CampusPage() {
                 ))}
               </div>
 
-              <div className="flex items-start gap-2 text-[14px] mb-2" style={{ color: "var(--text-secondary)" }}>
-                <Building size={15} className="mt-[3px] shrink-0" style={{ color: "var(--text-tertiary)" }} />
+              <div
+                className="flex items-start gap-2 text-[14px] mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <Building
+                  size={15}
+                  className="mt-[3px] shrink-0"
+                  style={{ color: "var(--text-tertiary)" }}
+                />
                 <span>{room.building}</span>
               </div>
               {room.neighbors.length > 0 && (
-                <div className="flex items-start gap-2 text-[14px]" style={{ color: "var(--text-secondary)" }}>
-                  <Users size={15} className="mt-[3px] shrink-0" style={{ color: "var(--text-tertiary)" }} />
+                <div
+                  className="flex items-start gap-2 text-[14px]"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <Users
+                    size={15}
+                    className="mt-[3px] shrink-0"
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
                   <span>{room.neighbors.join(", ")}</span>
                 </div>
               )}
@@ -197,17 +222,18 @@ export function CampusPage() {
             <div className="flex items-start gap-3">
               <div
                 className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                style={
-                  {
-                    background: "color-mix(in srgb, var(--info) 14%, transparent)",
-                    color: "var(--info)",
-                  } as CSSProperties
-                }
+                style={{
+                  background: "color-mix(in srgb, var(--info) 14%, transparent)",
+                  color: "var(--info)",
+                }}
               >
                 <Info size={18} />
               </div>
               <div>
-                <p className="text-[15px] mb-1" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                <p
+                  className="text-[15px] mb-1"
+                  style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                >
                   Комната ещё не назначена
                 </p>
                 <p className="text-[13.5px]" style={{ color: "var(--text-secondary)" }}>
@@ -235,16 +261,17 @@ export function CampusPage() {
                   >
                     <div
                       className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                      style={
-                        {
-                          background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                          color: accent,
-                        } as CSSProperties
-                      }
+                      style={{
+                        background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                        color: accent,
+                      }}
                     >
                       <Icon size={18} />
                     </div>
-                    <span className="flex-1 text-[15px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                    <span
+                      className="flex-1 text-[15px]"
+                      style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                    >
                       {category.title}
                     </span>
                     {currentUser.capabilities.canManageCampus && (
@@ -255,7 +282,11 @@ export function CampusPage() {
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            setAdminState({ kind: "campusCategory", mode: "edit", entity: category });
+                            setAdminState({
+                              kind: "campusCategory",
+                              mode: "edit",
+                              entity: category,
+                            });
                           }}
                         />
                         <ActionIconButton
@@ -303,12 +334,20 @@ export function CampusPage() {
                         <div
                           key={index}
                           className="pt-3"
-                          style={{ borderTop: index === 0 ? "none" : "1px dashed var(--line-subtle)" }}
+                          style={{
+                            borderTop: index === 0 ? "none" : "1px dashed var(--line-subtle)",
+                          }}
                         >
-                          <p className="text-[14px] mb-1" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                          <p
+                            className="text-[14px] mb-1"
+                            style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                          >
                             {item.title}
                           </p>
-                          <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                          <p
+                            className="text-[13.5px] leading-relaxed"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
                             {item.detail}
                           </p>
                         </div>
@@ -320,7 +359,6 @@ export function CampusPage() {
             })}
           </div>
         )}
-
       </div>
 
       <AdminEditorModal

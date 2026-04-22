@@ -19,13 +19,25 @@ export function BadgePage() {
   }
 
   const { currentUser, camp } = data;
-  const timeStr = time.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateStr = time.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  const timeStr = time.toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const dateStr = time.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="min-h-full flex flex-col" style={{ background: "var(--bg-app)" }}>
       <div className="px-5 pt-5 pb-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-1" style={{ color: "var(--text-secondary)" }}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-1"
+          style={{ color: "var(--text-secondary)" }}
+        >
           <ArrowLeft size={22} />
         </button>
         <span className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
@@ -102,7 +114,10 @@ export function BadgePage() {
 
               <div
                 className="rounded-[var(--radius-md)] p-4 mt-5 text-left backdrop-blur-sm"
-                style={{ background: "rgba(255, 255, 255, 0.7)", border: "1px solid var(--line-subtle)" }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.7)",
+                  border: "1px solid var(--line-subtle)",
+                }}
               >
                 <p
                   className="text-[12px] uppercase tracking-wider mb-1.5"
@@ -114,7 +129,8 @@ export function BadgePage() {
                   {camp.city} · {camp.university}
                 </p>
                 <p className="text-[13px] mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                  {new Date(camp.dates.start).toLocaleDateString("ru-RU")} – {new Date(camp.dates.end).toLocaleDateString("ru-RU")}
+                  {new Date(camp.dates.start).toLocaleDateString("ru-RU")} –{" "}
+                  {new Date(camp.dates.end).toLocaleDateString("ru-RU")}
                 </p>
               </div>
 
@@ -125,7 +141,11 @@ export function BadgePage() {
                 />
                 <span
                   className="text-[22px] tabular-nums"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", fontWeight: 500 }}
+                  style={{
+                    color: "var(--text-primary)",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 500,
+                  }}
                 >
                   {timeStr}
                 </span>

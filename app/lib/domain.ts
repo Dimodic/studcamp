@@ -8,7 +8,16 @@ export type UpdateType = "change" | "info" | "urgent";
 export type DocumentStatus = "done" | "in_progress" | "blocked" | "not_started";
 export type MaterialType = "presentation" | "recording" | "guide" | "checklist" | "org_doc";
 export type ResourceCategory = "study" | "projects" | "logistics" | "housing" | "forms" | "media";
-export type ResourceKind = "doc" | "sheet" | "form" | "folder" | "calendar" | "gallery" | "map" | "repo" | "guide";
+export type ResourceKind =
+  | "doc"
+  | "sheet"
+  | "form"
+  | "folder"
+  | "calendar"
+  | "gallery"
+  | "map"
+  | "repo"
+  | "guide";
 
 export interface Camp {
   id: string;
@@ -252,4 +261,3 @@ export interface LoginResponse {
   expiresAt: string;
   user: CurrentUser;
 }
-

@@ -50,7 +50,9 @@ export function AttendanceUploader({
   onClose,
 }: AttendanceUploaderProps) {
   const { parseAttendancePhoto, markAttendance } = useAppData();
-  const [settings, setSettings] = useState<LlmSettings>(() => loadLlmSettings() ?? DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<LlmSettings>(
+    () => loadLlmSettings() ?? DEFAULT_SETTINGS,
+  );
   const [eventId, setEventId] = useState<string>(defaultEventId ?? events[0]?.id ?? "");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -88,8 +90,7 @@ export function AttendanceUploader({
     event.target.value = "";
   };
 
-  const removePhoto = (index: number) =>
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  const removePhoto = (index: number) => setPhotos((prev) => prev.filter((_, i) => i !== index));
 
   const persistSettings = (next: LlmSettings) => {
     setSettings(next);
@@ -123,7 +124,9 @@ export function AttendanceUploader({
       setUnmatched(response.unmatched);
       setSelected(new Set(response.matched.filter((m) => m.signed).map((m) => m.userId)));
       if (response.matched.length === 0) {
-        setError("LLM не распознала ни одного участника. Попробуй другую модель или более чёткое фото.");
+        setError(
+          "LLM не распознала ни одного участника. Попробуй другую модель или более чёткое фото.",
+        );
       }
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Не удалось обработать фото");
@@ -174,10 +177,7 @@ export function AttendanceUploader({
       style={{ background: "rgba(0, 0, 0, 0.4)" }}
       onClick={close}
     >
-      <SurfaceCard
-        className="w-full max-w-xl max-h-[90vh] overflow-y-auto"
-        style={{ padding: 0 }}
-      >
+      <SurfaceCard className="w-full max-w-xl max-h-[90vh] overflow-y-auto" style={{ padding: 0 }}>
         <div
           className="sticky top-0 flex items-center justify-between px-5 py-4 border-b"
           style={{ background: "var(--bg-card)", borderColor: "var(--line-subtle)" }}
@@ -206,7 +206,11 @@ export function AttendanceUploader({
               value={eventId}
               onChange={(event) => setEventId(event.target.value)}
               className="w-full rounded-[var(--radius-md)] border px-3 py-2.5 text-[14px] outline-none"
-              style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+              style={{
+                borderColor: "var(--line-subtle)",
+                background: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             >
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
@@ -227,7 +231,11 @@ export function AttendanceUploader({
                 onChange={(event) => persistSettings({ ...settings, baseUrl: event.target.value })}
                 placeholder="https://openrouter.ai/api/v1"
                 className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-[13.5px] font-mono outline-none"
-                style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--line-subtle)",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </label>
             <label className="block">
@@ -240,7 +248,11 @@ export function AttendanceUploader({
                 onChange={(event) => persistSettings({ ...settings, model: event.target.value })}
                 placeholder="anthropic/claude-3.5-sonnet"
                 className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-[13.5px] outline-none"
-                style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--line-subtle)",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </label>
           </div>
@@ -254,7 +266,11 @@ export function AttendanceUploader({
               onChange={(event) => persistSettings({ ...settings, apiKey: event.target.value })}
               placeholder="sk-…"
               className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-[13.5px] outline-none"
-              style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+              style={{
+                borderColor: "var(--line-subtle)",
+                background: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             />
           </label>
 
@@ -332,7 +348,10 @@ export function AttendanceUploader({
 
           {matched.length > 0 && (
             <div className="space-y-2 pt-2">
-              <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+              <p
+                className="text-[11px] uppercase tracking-wider"
+                style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+              >
                 Распознано: {matched.length}
               </p>
               {matched.map((item) => {
@@ -357,7 +376,10 @@ export function AttendanceUploader({
                     >
                       {on && <Check size={14} />}
                     </span>
-                    <span className="flex-1 min-w-0 text-[14px]" style={{ color: "var(--text-primary)" }}>
+                    <span
+                      className="flex-1 min-w-0 text-[14px]"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {item.name}
                     </span>
                     {!item.signed && (
@@ -384,7 +406,8 @@ export function AttendanceUploader({
               className="text-[13px] p-3 rounded-[var(--radius-md)] flex items-center gap-2"
               style={{ background: "var(--success-soft)", color: "var(--success)" }}
             >
-              <Check size={14} /> Отметки сохранены. Можно прикрепить ещё один листок или закрыть окно.
+              <Check size={14} /> Отметки сохранены. Можно прикрепить ещё один листок или закрыть
+              окно.
             </div>
           )}
         </div>
@@ -398,7 +421,11 @@ export function AttendanceUploader({
             type="button"
             onClick={close}
             className="flex-1 h-[var(--button-height)] rounded-[var(--radius-lg)] text-[16px] transition-colors"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--text-primary)", color: "var(--text-primary)" }}
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--text-primary)",
+              color: "var(--text-primary)",
+            }}
           >
             Закрыть
           </button>

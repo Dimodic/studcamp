@@ -11,7 +11,13 @@ interface ButtonProps {
 const BASE_CLASS =
   "inline-flex items-center justify-center gap-2 h-[var(--button-height)] px-8 rounded-[var(--radius-lg)] text-[18px] font-medium disabled:opacity-40 disabled:cursor-not-allowed select-none transition-[background-color,color,border-color,transform] duration-150";
 
-export function PrimaryButton({ children, onClick, disabled, className = "", type = "button" }: ButtonProps) {
+export function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+  className = "",
+  type = "button",
+}: ButtonProps) {
   return (
     <button
       type={type}
@@ -25,7 +31,13 @@ export function PrimaryButton({ children, onClick, disabled, className = "", typ
   );
 }
 
-export function SecondaryButton({ children, onClick, disabled, className = "", type = "button" }: ButtonProps) {
+export function SecondaryButton({
+  children,
+  onClick,
+  disabled,
+  className = "",
+  type = "button",
+}: ButtonProps) {
   return (
     <button
       type={type}

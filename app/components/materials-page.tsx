@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -82,7 +82,9 @@ interface DateParts {
 function extractDateParts(date: Date): DateParts {
   const dayNumber = new Intl.DateTimeFormat("ru-RU", { day: "numeric" }).format(date);
   const weekday = new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(date);
-  const month = new Intl.DateTimeFormat("ru-RU", { month: "short" }).format(date).replace(/\.$/, "");
+  const month = new Intl.DateTimeFormat("ru-RU", { month: "short" })
+    .format(date)
+    .replace(/\.$/, "");
   return {
     dayNumber,
     month,
@@ -96,7 +98,10 @@ interface DayGroup {
   materials: Material[];
 }
 
-function groupMaterialsByDay(materials: Material[], camp: Camp): { groups: DayGroup[]; undated: Material[] } {
+function groupMaterialsByDay(
+  materials: Material[],
+  camp: Camp,
+): { groups: DayGroup[]; undated: Material[] } {
   const byDay = new Map<number, Material[]>();
   const undated: Material[] = [];
 
@@ -156,17 +161,18 @@ function MaterialRow({
     >
       <div
         className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-        style={
-          {
-            background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-            color: accent,
-          } as CSSProperties
-        }
+        style={{
+          background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+          color: accent,
+        }}
       >
         <Icon size={20} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] leading-snug" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+        <p
+          className="text-[15px] leading-snug"
+          style={{ color: "var(--text-primary)", fontWeight: 500 }}
+        >
           {material.title}
         </p>
         <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -227,7 +233,8 @@ function MaterialRow({
 export function MaterialsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setEntityVisibility } =
+    useAppData();
   const [adminState, setAdminState] = useState<{
     kind: AdminEntityKind;
     mode: "create" | "edit";
@@ -264,7 +271,9 @@ export function MaterialsPage() {
       ? data.materials.filter((material) => material.eventId === eventFilter)
       : data.materials;
     const { groups, undated } = groupMaterialsByDay(filtered, data.camp);
-    const eventById = new Map(data.events.map((event) => [event.id, { title: event.title, date: event.date }]));
+    const eventById = new Map(
+      data.events.map((event) => [event.id, { title: event.title, date: event.date }]),
+    );
     return { orgDocs, groups, undated, eventById };
   }, [data, eventFilter]);
 
@@ -272,7 +281,9 @@ export function MaterialsPage() {
     if (!data) return;
     if (adminAction === "create-material" && data.currentUser.capabilities.canManageMaterials) {
       setAdminState({ kind: "material", mode: "create" });
-      navigate(location.pathname + (eventFilter ? `?event=${eventFilter}` : ""), { replace: true });
+      void navigate(location.pathname + (eventFilter ? `?event=${eventFilter}` : ""), {
+        replace: true,
+      });
     }
   }, [adminAction, data, eventFilter, location.pathname, navigate]);
 
@@ -291,7 +302,10 @@ export function MaterialsPage() {
     return null;
   }
 
-  const eventOptions = data.events.map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
+  const eventOptions = data.events.map((event) => ({
+    id: event.id,
+    label: `${event.title} · ${event.date}`,
+  }));
   const canManageMaterials = data.currentUser.capabilities.canManageMaterials;
   const canManageResources = data.currentUser.capabilities.canManageResources;
 
@@ -321,7 +335,10 @@ export function MaterialsPage() {
           </button>
           <div className="min-w-0">
             <h1 className="text-[var(--text-primary)] truncate">Материалы</h1>
-            <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
+            <p
+              className="text-[13px] mt-1 flex items-center gap-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               <CalendarDays size={14} /> День {data.ui.currentDay} из {data.ui.totalDays}
             </p>
           </div>
@@ -405,8 +422,14 @@ export function MaterialsPage() {
                     <span
                       className="text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"
                       style={{
-                        background: group.day === data.ui.currentDay ? "var(--brand-soft)" : "var(--bg-subtle)",
-                        color: group.day === data.ui.currentDay ? "var(--brand-contrast)" : "var(--text-secondary)",
+                        background:
+                          group.day === data.ui.currentDay
+                            ? "var(--brand-soft)"
+                            : "var(--bg-subtle)",
+                        color:
+                          group.day === data.ui.currentDay
+                            ? "var(--brand-contrast)"
+                            : "var(--text-secondary)",
                         fontWeight: group.day === data.ui.currentDay ? 600 : 400,
                       }}
                     >
@@ -522,7 +545,11 @@ export function MaterialsPage() {
                     label="Добавить орг. документ"
                     onClick={(event) => {
                       event.preventDefault();
-                      setAdminState({ kind: "material", mode: "create", defaults: { type: "org_doc" } });
+                      setAdminState({
+                        kind: "material",
+                        mode: "create",
+                        defaults: { type: "org_doc" },
+                      });
                     }}
                   />
                 )}
@@ -533,7 +560,11 @@ export function MaterialsPage() {
                     key={material.id}
                     className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--bg-subtle)]"
                   >
-                    <File size={16} style={{ color: "var(--text-tertiary)" }} className="shrink-0" />
+                    <File
+                      size={16}
+                      style={{ color: "var(--text-tertiary)" }}
+                      className="shrink-0"
+                    />
                     <button
                       type="button"
                       onClick={() => openExternal(material.url)}
@@ -546,7 +577,10 @@ export function MaterialsPage() {
                         {material.title}
                       </p>
                       {material.topic && (
-                        <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-tertiary)" }}>
+                        <p
+                          className="text-[12px] mt-0.5 truncate"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           {material.topic}
                         </p>
                       )}
@@ -608,7 +642,11 @@ export function MaterialsPage() {
                     label="Добавить ссылку"
                     onClick={(event) => {
                       event.preventDefault();
-                      setAdminState({ kind: "resource", mode: "create", defaults: { category: "study" } });
+                      setAdminState({
+                        kind: "resource",
+                        mode: "create",
+                        defaults: { category: "study" },
+                      });
                     }}
                   />
                 )}
@@ -619,7 +657,11 @@ export function MaterialsPage() {
                     key={resource.id}
                     className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--bg-subtle)]"
                   >
-                    <Link2 size={16} style={{ color: "var(--text-tertiary)" }} className="shrink-0" />
+                    <Link2
+                      size={16}
+                      style={{ color: "var(--text-tertiary)" }}
+                      className="shrink-0"
+                    />
                     <button
                       type="button"
                       onClick={() => openExternal(resource.url)}

@@ -20,7 +20,6 @@ from backend.app.models.entities import Event, EventCheckIn, User, UserRole
 
 from ._helpers import get_or_404, require_organizer
 
-
 router = APIRouter(prefix="/admin/attendance", tags=["admin"])
 
 
@@ -94,9 +93,12 @@ def _extract_json(raw: str) -> dict[str, Any]:
         if brace:
             stripped = brace.group(0)
     try:
-        return json.loads(stripped)
+        decoded: dict[str, Any] = json.loads(stripped)
+        return decoded
     except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=502, detail=f"Модель вернула не-JSON ответ: {exc.msg}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Модель вернула не-JSON ответ: {exc.msg}"
+        ) from exc
 
 
 def _ensure_photo(photo: AttendancePhoto) -> None:
@@ -167,7 +169,9 @@ def parse_attendance_photo(
         with httpx.Client(timeout=180) as client:
             response = client.post(endpoint, headers=headers, json=body)
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Не удалось связаться с {endpoint}: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Не удалось связаться с {endpoint}: {exc}"
+        ) from exc
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 

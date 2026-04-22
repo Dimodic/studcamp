@@ -12,7 +12,9 @@ export interface CampFormState {
   status: string;
 }
 
-export function buildCampInitial(entity?: Partial<Camp> & { startDate?: string; endDate?: string }): CampFormState {
+export function buildCampInitial(
+  entity?: Partial<Camp> & { startDate?: string; endDate?: string },
+): CampFormState {
   return {
     name: entity?.name ?? "",
     shortDesc: entity?.shortDesc ?? "",
@@ -44,14 +46,22 @@ interface CampFormProps {
 export function CampForm({ state, onChange }: CampFormProps) {
   return (
     <>
-      <TextField label="Название" value={state.name} onChange={(value) => onChange({ ...state, name: value })} />
+      <TextField
+        label="Название"
+        value={state.name}
+        onChange={(value) => onChange({ ...state, name: value })}
+      />
       <TextField
         label="Краткое описание"
         value={state.shortDesc}
         multiline
         onChange={(value) => onChange({ ...state, shortDesc: value })}
       />
-      <TextField label="Город" value={state.city} onChange={(value) => onChange({ ...state, city: value })} />
+      <TextField
+        label="Город"
+        value={state.city}
+        onChange={(value) => onChange({ ...state, city: value })}
+      />
       <TextField
         label="Организация"
         value={state.university}
@@ -69,7 +79,11 @@ export function CampForm({ state, onChange }: CampFormProps) {
         type="date"
         onChange={(value) => onChange({ ...state, endDate: value })}
       />
-      <TextField label="Статус" value={state.status} onChange={(value) => onChange({ ...state, status: value })} />
+      <TextField
+        label="Статус"
+        value={state.status}
+        onChange={(value) => onChange({ ...state, status: value })}
+      />
     </>
   );
 }

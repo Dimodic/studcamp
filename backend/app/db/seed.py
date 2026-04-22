@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
-from typing import Iterable
+from typing import Any
 
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -28,17 +29,18 @@ from backend.app.models.entities import (
     ProjectTeam,
     Resource,
     RoomAssignment,
-    Session as UserSession,
     Story,
-    StoryType,
     StoryRead,
+    StoryType,
     UpdateRead,
     UpdateType,
     User,
     UserRole,
     VisibilityMode,
 )
-
+from backend.app.models.entities import (
+    Session as UserSession,
+)
 
 RESET_ORDER: tuple[type, ...] = (
     UpdateRead,
@@ -63,8 +65,9 @@ RESET_ORDER: tuple[type, ...] = (
 )
 
 
-def _load_seed(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def _load_seed(path: Path) -> dict[str, Any]:
+    data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    return data
 
 
 def _reset_tables(db: Session) -> None:
@@ -73,7 +76,7 @@ def _reset_tables(db: Session) -> None:
     db.flush()
 
 
-def _seed_camp(db: Session, payload: dict) -> None:
+def _seed_camp(db: Session, payload: dict[str, Any]) -> None:
     db.add(
         Camp(
             id=payload["id"],
@@ -92,7 +95,9 @@ def _seed_camp(db: Session, payload: dict) -> None:
     )
 
 
-def _seed_users(db: Session, users: Iterable[dict], camp_id: str, default_password: str) -> None:
+def _seed_users(
+    db: Session, users: Iterable[dict[str, Any]], camp_id: str, default_password: str
+) -> None:
     salt, password_hash = hash_password(default_password)
     for payload in users:
         email = payload.get("email")
@@ -124,7 +129,7 @@ def _seed_users(db: Session, users: Iterable[dict], camp_id: str, default_passwo
         )
 
 
-def _seed_events(db: Session, events: Iterable[dict]) -> None:
+def _seed_events(db: Session, events: Iterable[dict[str, Any]]) -> None:
     for payload in events:
         db.add(
             Event(
@@ -148,7 +153,7 @@ def _seed_events(db: Session, events: Iterable[dict]) -> None:
             db.add(EventTeacher(event_id=payload["id"], teacher_id=teacher_id))
 
 
-def _seed_projects(db: Session, projects: Iterable[dict]) -> None:
+def _seed_projects(db: Session, projects: Iterable[dict[str, Any]]) -> None:
     for payload in projects:
         db.add(
             Project(
@@ -169,7 +174,7 @@ def _seed_projects(db: Session, projects: Iterable[dict]) -> None:
         )
 
 
-def _seed_stories(db: Session, stories: Iterable[dict]) -> None:
+def _seed_stories(db: Session, stories: Iterable[dict[str, Any]]) -> None:
     for payload in stories:
         db.add(
             Story(
@@ -182,7 +187,7 @@ def _seed_stories(db: Session, stories: Iterable[dict]) -> None:
         )
 
 
-def _seed_org_updates(db: Session, updates: Iterable[dict]) -> None:
+def _seed_org_updates(db: Session, updates: Iterable[dict[str, Any]]) -> None:
     for payload in updates:
         db.add(
             OrgUpdate(
@@ -195,7 +200,7 @@ def _seed_org_updates(db: Session, updates: Iterable[dict]) -> None:
         )
 
 
-def _seed_documents(db: Session, documents: Iterable[dict]) -> None:
+def _seed_documents(db: Session, documents: Iterable[dict[str, Any]]) -> None:
     for payload in documents:
         db.add(
             Document(
@@ -211,7 +216,9 @@ def _seed_documents(db: Session, documents: Iterable[dict]) -> None:
         )
 
 
-def _seed_campus(db: Session, categories: Iterable[dict], room_assignments: Iterable[dict]) -> None:
+def _seed_campus(
+    db: Session, categories: Iterable[dict[str, Any]], room_assignments: Iterable[dict[str, Any]]
+) -> None:
     for payload in categories:
         db.add(
             CampusCategory(
@@ -235,7 +242,9 @@ def _seed_campus(db: Session, categories: Iterable[dict], room_assignments: Iter
         )
 
 
-def _seed_content(db: Session, materials: Iterable[dict], resources: Iterable[dict]) -> None:
+def _seed_content(
+    db: Session, materials: Iterable[dict[str, Any]], resources: Iterable[dict[str, Any]]
+) -> None:
     for payload in materials:
         db.add(
             Material(
@@ -266,7 +275,7 @@ def _seed_content(db: Session, materials: Iterable[dict], resources: Iterable[di
         )
 
 
-def _seed_user_state(db: Session, snapshot: dict) -> None:
+def _seed_user_state(db: Session, snapshot: dict[str, Any]) -> None:
     viewer_id = snapshot.get("meta", {}).get("viewer_user_id", "viewer-dev")
 
     for story_id in snapshot.get("story_reads", []):
@@ -293,11 +302,10 @@ def _seed_user_state(db: Session, snapshot: dict) -> None:
     # «пропущено» в расписании.
     camp_current_day = snapshot.get("camp", {}).get("current_day", 1)
     past_events = [
-        event for event in snapshot.get("events", [])
-        if event.get("day", 0) < camp_current_day
+        event for event in snapshot.get("events", []) if event.get("day", 0) < camp_current_day
     ]
     past_events.sort(key=lambda event: (event.get("day", 0), event.get("start_at", "")))
-    skip_last = set(event["id"] for event in past_events[-2:])
+    skip_last = {event["id"] for event in past_events[-2:]}
     for event in past_events:
         key = (viewer_id, event["id"])
         if key in seeded_checkins or event["id"] in skip_last:

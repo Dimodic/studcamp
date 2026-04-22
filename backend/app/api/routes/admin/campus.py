@@ -6,10 +6,13 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_current_user
 from backend.app.db.session import get_db
 from backend.app.models.entities import CampusCategory, User
-from backend.app.schemas.api import CampusCategoryUpsertSchema, CreatedEntitySchema, SimpleStatusSchema
+from backend.app.schemas.api import (
+    CampusCategoryUpsertSchema,
+    CreatedEntitySchema,
+    SimpleStatusSchema,
+)
 
 from ._helpers import generate_id, get_or_404, require_organizer
-
 
 router = APIRouter(prefix="/admin/campus-categories", tags=["admin"])
 

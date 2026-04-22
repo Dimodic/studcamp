@@ -10,7 +10,6 @@ from backend.app.schemas.api import CreatedEntitySchema, OrgUpdateUpsertSchema, 
 
 from ._helpers import generate_id, get_or_404, parse_enum, require_organizer
 
-
 router = APIRouter(prefix="/admin/org-updates", tags=["admin"])
 
 
@@ -28,7 +27,9 @@ def create_org_update(
     db: Session = Depends(get_db),
 ) -> CreatedEntitySchema:
     require_organizer(current_user)
-    update = OrgUpdate(id=generate_id("update"), text="", time="", is_new=True, type=UpdateType.info)
+    update = OrgUpdate(
+        id=generate_id("update"), text="", time="", is_new=True, type=UpdateType.info
+    )
     _apply(update, payload)
     db.add(update)
     db.commit()

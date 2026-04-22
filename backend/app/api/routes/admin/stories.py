@@ -10,7 +10,6 @@ from backend.app.schemas.api import CreatedEntitySchema, SimpleStatusSchema, Sto
 
 from ._helpers import generate_id, get_or_404, parse_enum, require_organizer
 
-
 router = APIRouter(prefix="/admin/stories", tags=["admin"])
 
 

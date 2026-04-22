@@ -12,7 +12,9 @@ export interface SplitEventTitle {
 const NON_COUNTED_RE =
   /(завтрак|обед|ужин|кофе|работ[аы]?\s+над\s+проектам|регистрац|отъезд|экскурс|мероприят|знакомств|вручен|открыт|закрыт|гитарник)/i;
 
-export function isCountableEvent(event: Pick<CampEvent, "type" | "title" | "countsForAttendance">): boolean {
+export function isCountableEvent(
+  event: Pick<CampEvent, "type" | "title" | "countsForAttendance">,
+): boolean {
   if (event.countsForAttendance === false) return false;
   if (event.countsForAttendance === true) return true;
   const haystack = `${event.type ?? ""} ${event.title ?? ""}`;
@@ -42,5 +44,5 @@ function looksLikePersonName(value: string): boolean {
   if (/[0-9]/.test(value)) return false;
   const words = value.split(/\s+/).filter(Boolean);
   if (words.length < 2 || words.length > 4) return false;
-  return words.every((word) => /^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё.'\-]*$/.test(word));
+  return words.every((word) => /^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё.'-]*$/.test(word));
 }

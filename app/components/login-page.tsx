@@ -30,7 +30,7 @@ export function LoginPage() {
     try {
       await login(email.trim(), password.trim());
       setError("");
-      navigate(from, { replace: true });
+      void navigate(from, { replace: true });
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Не удалось войти");
     } finally {
@@ -46,7 +46,11 @@ export function LoginPage() {
       <div className="flex flex-col px-8 sm:px-12 lg:px-20 py-10 lg:py-14">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[10px] overflow-hidden shrink-0">
-            <ImageWithFallback src={logoImg} alt="Яндекс Образование" className="w-full h-full object-cover" />
+            <ImageWithFallback
+              src={logoImg}
+              alt="Яндекс Образование"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-[15px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
@@ -60,20 +64,34 @@ export function LoginPage() {
 
         <div className="flex-1 flex items-center">
           <div className="w-full max-w-[440px]">
-            <h1 className="mb-5" style={{ fontSize: "56px", lineHeight: 1.02, letterSpacing: "-0.02em" }}>
+            <h1
+              className="mb-5"
+              style={{ fontSize: "56px", lineHeight: 1.02, letterSpacing: "-0.02em" }}
+            >
               Студкемп
             </h1>
-            <p className="text-[18px] leading-relaxed mb-10" style={{ color: "var(--text-secondary)" }}>
-              Алиса и умные устройства Яндекса. Войди, чтобы открыть расписание, людей, проекты и документы.
+            <p
+              className="text-[18px] leading-relaxed mb-10"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Алиса и умные устройства Яндекса. Войди, чтобы открыть расписание, людей, проекты и
+              документы.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="text-[13px] mb-1.5 block" style={{ color: "var(--text-secondary)" }}>
+                <label
+                  className="text-[13px] mb-1.5 block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Email
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--text-tertiary)" }} />
+                  <Mail
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2"
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
                   <input
                     type="email"
                     value={email}
@@ -89,7 +107,10 @@ export function LoginPage() {
                 </div>
               </div>
               <div>
-                <label className="text-[13px] mb-1.5 block" style={{ color: "var(--text-secondary)" }}>
+                <label
+                  className="text-[13px] mb-1.5 block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Пароль
                 </label>
                 <input

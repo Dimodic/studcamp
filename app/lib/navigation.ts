@@ -1,11 +1,4 @@
-import {
-  Calendar,
-  FolderKanban,
-  Home,
-  User,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Calendar, FolderKanban, Home, User, Users, type LucideIcon } from "lucide-react";
 
 export type NavigationItem = {
   path: string;
@@ -23,9 +16,7 @@ export const navigationItems: NavigationItem[] = [
 ];
 
 const primaryPaths = new Set(
-  navigationItems
-    .filter((item) => item.isPrimary)
-    .map((item) => item.path),
+  navigationItems.filter((item) => item.isPrimary).map((item) => item.path),
 );
 
 export function isPrimaryRoute(pathname: string) {

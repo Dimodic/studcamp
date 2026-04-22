@@ -3,11 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import logoImg from "../assets/logo.png";
 import { useIsMobile } from "../hooks/useMobile";
-import {
-  getActivePrimaryPath,
-  isPrimaryRoute,
-  navigationItems,
-} from "../lib/navigation";
+import { getActivePrimaryPath, isPrimaryRoute, navigationItems } from "../lib/navigation";
 
 const COLLAPSED_WIDTH = "4.5rem";
 const EXPANDED_WIDTH = "16rem";

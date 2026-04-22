@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
     )
 
     @app.get("/health", tags=["health"])
-    def health():
+    def health() -> dict[str, str]:
         return {"status": "ok"}
 
     app.include_router(api_router, prefix=settings.api_v1_prefix)

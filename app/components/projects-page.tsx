@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -46,7 +46,13 @@ const PHASE_COPY: Record<
   },
 };
 
-function PhaseBanner({ phase, selectedCount }: { phase: ProjectSelectionPhase; selectedCount: number }) {
+function PhaseBanner({
+  phase,
+  selectedCount,
+}: {
+  phase: ProjectSelectionPhase;
+  selectedCount: number;
+}) {
   const copy = PHASE_COPY[phase];
   const Icon = copy.icon;
   const isOpen = phase === "open";
@@ -61,7 +67,7 @@ function PhaseBanner({ phase, selectedCount }: { phase: ProjectSelectionPhase; s
       <div className="flex items-start gap-4">
         <div
           className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-          style={{ background: tileBackground, color: tileColor } as CSSProperties}
+          style={{ background: tileBackground, color: tileColor }}
         >
           <Icon size={20} />
         </div>
@@ -69,7 +75,10 @@ function PhaseBanner({ phase, selectedCount }: { phase: ProjectSelectionPhase; s
           <p className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
             {copy.title}
           </p>
-          <p className="text-[13.5px] mt-1 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="text-[13.5px] mt-1 leading-relaxed"
+            style={{ color: "var(--text-secondary)" }}
+          >
             {copy.description}
           </p>
           {isOpen && (
@@ -78,7 +87,10 @@ function PhaseBanner({ phase, selectedCount }: { phase: ProjectSelectionPhase; s
                 <span className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
                   Выбрано
                 </span>
-                <span className="text-[13px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                <span
+                  className="text-[13px]"
+                  style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                >
                   {selectedCount} / 5
                 </span>
               </div>
@@ -245,11 +257,7 @@ function MentorHeader({
     : undefined;
 
   const photoNode = mentor.photo ? (
-    <img
-      src={mentor.photo}
-      alt={mentor.name}
-      className="w-full h-full object-cover object-top"
-    />
+    <img src={mentor.photo} alt={mentor.name} className="w-full h-full object-cover object-top" />
   ) : (
     <div
       className="w-full h-full flex items-center justify-center"
@@ -281,7 +289,8 @@ function MentorHeader({
           className="text-[10px] uppercase tracking-wider mb-1"
           style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
         >
-          Ментор · {projectsCount} {projectsCount === 1 ? "проект" : projectsCount < 5 ? "проекта" : "проектов"}
+          Ментор · {projectsCount}{" "}
+          {projectsCount === 1 ? "проект" : projectsCount < 5 ? "проекта" : "проектов"}
         </p>
         <p
           className="text-[16px] leading-tight mb-1"
@@ -385,11 +394,15 @@ function ProjectSection({
       onClick={isInteractive ? onToggle : undefined}
     >
       <div className="flex items-start gap-3">
-        {phase === "open" && (
-          selected ? (
+        {phase === "open" &&
+          (selected ? (
             <div
               className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center text-[14px] shrink-0"
-              style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 600 }}
+              style={{
+                background: "var(--brand)",
+                color: "var(--brand-contrast)",
+                fontWeight: 600,
+              }}
             >
               {priorityIndex + 1}
             </div>
@@ -402,12 +415,15 @@ function ProjectSection({
                 +
               </span>
             </div>
-          )
-        )}
+          ))}
         {phase === "closed" && selected && (
           <div
             className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center text-[14px] shrink-0"
-            style={{ background: "var(--brand-soft)", color: "var(--text-primary)", fontWeight: 600 }}
+            style={{
+              background: "var(--brand-soft)",
+              color: "var(--text-primary)",
+              fontWeight: 600,
+            }}
           >
             {priorityIndex + 1}
           </div>
@@ -563,12 +579,12 @@ function TeamRosterBlock({
   );
 
   return (
-    <div
-      className="mt-4 rounded-[var(--radius-md)] p-4"
-      style={{ background: "var(--bg-subtle)" }}
-    >
+    <div className="mt-4 rounded-[var(--radius-md)] p-4" style={{ background: "var(--bg-subtle)" }}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+        <p
+          className="text-[11px] uppercase tracking-wider"
+          style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+        >
           Команды
         </p>
         {canManage && onAddTeam && (
@@ -589,7 +605,10 @@ function TeamRosterBlock({
 
       {projectTeams.length === 0 ? (
         <p className="text-[13px]" style={{ color: "var(--text-tertiary)" }}>
-          Команд ещё нет. {canManage ? "Нажмите «Распределить по приоритетам» наверху или создайте команду вручную." : "Организатор ещё не распределил участников."}
+          Команд ещё нет.{" "}
+          {canManage
+            ? "Нажмите «Распределить по приоритетам» наверху или создайте команду вручную."
+            : "Организатор ещё не распределил участников."}
         </p>
       ) : (
         <div className="space-y-3">
@@ -606,17 +625,27 @@ function TeamRosterBlock({
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[13px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                  <p
+                    className="text-[13px]"
+                    style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                  >
                     Команда {team.number}
                     {isMyTeam && (
                       <span
                         className="ml-2 text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                        style={{ background: "var(--brand-soft)", color: "var(--text-primary)", fontWeight: 600 }}
+                        style={{
+                          background: "var(--brand-soft)",
+                          color: "var(--text-primary)",
+                          fontWeight: 600,
+                        }}
                       >
                         Ваша
                       </span>
                     )}
-                    <span className="ml-2 text-[12px]" style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>
+                    <span
+                      className="ml-2 text-[12px]"
+                      style={{ color: "var(--text-tertiary)", fontWeight: 400 }}
+                    >
                       {team.memberIds.length} / {project.maxTeam}
                     </span>
                   </p>
@@ -626,7 +655,11 @@ function TeamRosterBlock({
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
-                        if (window.confirm(`Удалить команду ${team.number}? Участники вернутся в распределение.`)) {
+                        if (
+                          window.confirm(
+                            `Удалить команду ${team.number}? Участники вернутся в распределение.`,
+                          )
+                        ) {
                           onDeleteTeam(team.id);
                         }
                       }}
@@ -685,7 +718,11 @@ function TeamRosterBlock({
                           }}
                           onClick={(event) => event.stopPropagation()}
                           className="flex-1 text-[12.5px] rounded-[var(--radius-sm)] border px-2 py-1 outline-none"
-                          style={{ borderColor: "var(--line-subtle)", background: "var(--bg-card)", color: "var(--text-primary)" }}
+                          style={{
+                            borderColor: "var(--line-subtle)",
+                            background: "var(--bg-card)",
+                            color: "var(--text-primary)",
+                          }}
                         >
                           <option value="" disabled>
                             Добавить участника…
@@ -828,7 +865,9 @@ function MentorCard({
                 onToggle={phase === "open" ? () => onTogglePriority(project.id) : undefined}
                 onEdit={onEditProject ? () => onEditProject(project) : undefined}
                 onDelete={onDeleteProject ? () => onDeleteProject(project) : undefined}
-                onToggleHidden={onToggleProjectHidden ? () => onToggleProjectHidden(project) : undefined}
+                onToggleHidden={
+                  onToggleProjectHidden ? () => onToggleProjectHidden(project) : undefined
+                }
                 teams={teams}
                 personById={personById}
                 currentUserId={currentUserId}
@@ -898,9 +937,12 @@ export function ProjectsPage() {
     return null;
   }
 
-  const phase = data.projectSelectionPhase as ProjectSelectionPhase;
+  const phase = data.projectSelectionPhase;
   const allProjects = data.projects;
-  const eventOptions = data.events.map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
+  const eventOptions = data.events.map((event) => ({
+    id: event.id,
+    label: `${event.title} · ${event.date}`,
+  }));
   const canManage = data.currentUser.capabilities.canManageProjects;
   const isParticipant = data.currentUser.role === "participant";
   const teams = data.projectTeams ?? [];
@@ -914,14 +956,16 @@ export function ProjectsPage() {
 
   const isPriorityView = isParticipant && phase === "closed" && priorities.length > 0;
   const availableProjects = isPriorityView
-    ? (priorities
+    ? priorities
         .map((id) => allProjects.find((project) => project.id === id))
-        .filter((project): project is Project => Boolean(project)))
+        .filter((project): project is Project => Boolean(project))
     : allProjects;
 
   // В results у участника «мой проект» — тот, к команде которого он привязан.
   const assignedTeamId = data.currentUser.assignedTeamId ?? null;
-  const assignedTeam = assignedTeamId ? teams.find((team) => team.id === assignedTeamId) : undefined;
+  const assignedTeam = assignedTeamId
+    ? teams.find((team) => team.id === assignedTeamId)
+    : undefined;
   const myProjectId = isParticipant && phase === "results" ? assignedTeam?.projectId : undefined;
   const myProject = myProjectId
     ? availableProjects.find((project) => project.id === myProjectId)
@@ -965,8 +1009,14 @@ export function ProjectsPage() {
       priorities={priorities}
       myProjectId={myProjectId}
       onTogglePriority={togglePriority}
-      onEditProject={canManage ? (project) => setAdminState({ kind: "project", mode: "edit", entity: project }) : undefined}
-      onDeleteProject={canManage ? (project) => void deleteAdminEntity("projects", project.id) : undefined}
+      onEditProject={
+        canManage
+          ? (project) => setAdminState({ kind: "project", mode: "edit", entity: project })
+          : undefined
+      }
+      onDeleteProject={
+        canManage ? (project) => void deleteAdminEntity("projects", project.id) : undefined
+      }
       onToggleProjectHidden={
         canManage
           ? (project) => void setEntityVisibility("projects", project.id, !project.isHidden)
@@ -979,7 +1029,9 @@ export function ProjectsPage() {
       canManage={canManage}
       onAddTeam={canManage ? (projectId) => void createProjectTeam(projectId) : undefined}
       onDeleteTeam={canManage ? (teamId) => void deleteProjectTeam(teamId) : undefined}
-      onAssign={canManage ? (userId, teamId) => void setProjectAssignment(userId, teamId) : undefined}
+      onAssign={
+        canManage ? (userId, teamId) => void setProjectAssignment(userId, teamId) : undefined
+      }
       onUnassign={canManage ? (userId) => void setProjectAssignment(userId, null) : undefined}
     />
   );
@@ -1006,7 +1058,9 @@ export function ProjectsPage() {
           `Распределено: ${result.assigned}. Не распределены (нет приоритетов или мест): ${result.unassigned.length}.`,
         );
       } else {
-        window.alert(`Распределено: ${result.assigned}. Все участники с приоритетами получили команду.`);
+        window.alert(
+          `Распределено: ${result.assigned}. Все участники с приоритетами получили команду.`,
+        );
       }
     } finally {
       setDistributing(false);
@@ -1114,7 +1168,10 @@ export function ProjectsPage() {
               <span className="text-[14px]" style={{ fontWeight: 500 }}>
                 {allExpanded ? "Скрыть остальные проекты" : "Показать остальные проекты"}
               </span>
-              <span className="flex items-center gap-2 text-[13px]" style={{ color: "var(--text-tertiary)" }}>
+              <span
+                className="flex items-center gap-2 text-[13px]"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {otherProjectsCount}
                 <ChevronDown
                   size={16}
@@ -1127,16 +1184,12 @@ export function ProjectsPage() {
             </button>
 
             {allExpanded && (
-              <div className="mt-4 space-y-4">
-                {otherGroups.map(renderMentorCard)}
-              </div>
+              <div className="mt-4 space-y-4">{otherGroups.map(renderMentorCard)}</div>
             )}
           </div>
         </>
       ) : (
-        <div className="px-5 pb-8 space-y-4">
-          {otherGroups.map(renderMentorCard)}
-        </div>
+        <div className="px-5 pb-8 space-y-4">{otherGroups.map(renderMentorCard)}</div>
       )}
 
       {phase === "open" && !myGroup && !isEmpty && (
@@ -1162,7 +1215,11 @@ export function ProjectsPage() {
             {saved ? (
               <span
                 className="flex items-center gap-1.5 text-[13px] px-4 py-2 rounded-full"
-                style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
+                style={{
+                  background: "var(--success-soft)",
+                  color: "var(--success)",
+                  fontWeight: 600,
+                }}
               >
                 <Check size={14} /> Сохранено
               </span>
@@ -1175,7 +1232,11 @@ export function ProjectsPage() {
                 }}
                 disabled={priorities.length === 0}
                 className="text-[13px] px-5 py-2 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--brand-hover)]"
-                style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 600 }}
+                style={{
+                  background: "var(--brand)",
+                  color: "var(--brand-contrast)",
+                  fontWeight: 600,
+                }}
               >
                 Сохранить
               </button>

@@ -53,7 +53,11 @@ export function DocumentForm({ state, onChange, userOptions = [] }: DocumentForm
         onChange={(value) => onChange({ ...state, userId: value })}
         options={userOptions.map((user) => ({ value: user.id, label: user.label }))}
       />
-      <TextField label="Название" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
+      <TextField
+        label="Название"
+        value={state.title}
+        onChange={(value) => onChange({ ...state, title: value })}
+      />
       <TextField
         label="Описание"
         value={state.description}
@@ -78,7 +82,11 @@ export function DocumentForm({ state, onChange, userOptions = [] }: DocumentForm
         multiline
         onChange={(value) => onChange({ ...state, fallback: value })}
       />
-      <ToggleField label="Критичный документ" checked={state.critical} onChange={(value) => onChange({ ...state, critical: value })} />
+      <ToggleField
+        label="Критичный документ"
+        checked={state.critical}
+        onChange={(value) => onChange({ ...state, critical: value })}
+      />
     </>
   );
 }

@@ -21,12 +21,11 @@ export function buildStoryInitial(entity?: Partial<Story>): StoryFormState {
     title: entity?.title ?? "",
     type: entity?.type ?? "info",
     image: entity?.image ?? "",
-    slides:
-      entity?.slides?.map((slide) => ({
-        image: slide.image ?? "",
-        text: slide.text ?? "",
-        caption: slide.caption ?? "",
-      })) ?? [{ image: "", text: "", caption: "" }],
+    slides: entity?.slides?.map((slide) => ({
+      image: slide.image ?? "",
+      text: slide.text ?? "",
+      caption: slide.caption ?? "",
+    })) ?? [{ image: "", text: "", caption: "" }],
   };
 }
 
@@ -74,30 +73,63 @@ export function StoryForm({ state, onChange }: StoryFormProps) {
 
   return (
     <>
-      <TextField label="Заголовок" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
+      <TextField
+        label="Заголовок"
+        value={state.title}
+        onChange={(value) => onChange({ ...state, title: value })}
+      />
       <SelectField
         label="Тип"
         value={state.type}
         onChange={(value) => onChange({ ...state, type: value as StoryType })}
         options={STORY_TYPE_OPTIONS}
       />
-      <TextField label="Изображение" value={state.image} onChange={(value) => onChange({ ...state, image: value })} />
+      <TextField
+        label="Изображение"
+        value={state.image}
+        onChange={(value) => onChange({ ...state, image: value })}
+      />
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <FieldLabel>Слайды</FieldLabel>
-          <ActionIconButton kind="plus" label="Добавить слайд" onClick={(event) => { event.preventDefault(); addSlide(); }} />
+          <ActionIconButton
+            kind="plus"
+            label="Добавить слайд"
+            onClick={(event) => {
+              event.preventDefault();
+              addSlide();
+            }}
+          />
         </div>
         {state.slides.map((slide, index) => (
-          <div key={index} className="p-3 rounded-[var(--radius-md)] border space-y-3" style={{ borderColor: "var(--line-subtle)" }}>
+          <div
+            key={index}
+            className="p-3 rounded-[var(--radius-md)] border space-y-3"
+            style={{ borderColor: "var(--line-subtle)" }}
+          >
             <TextField
               label={`Слайд ${index + 1}: изображение`}
               value={slide.image}
               onChange={(value) => updateSlide(index, { image: value })}
             />
-            <TextField label="Текст" value={slide.text} multiline onChange={(value) => updateSlide(index, { text: value })} />
-            <TextField label="Подпись" value={slide.caption} onChange={(value) => updateSlide(index, { caption: value })} />
+            <TextField
+              label="Текст"
+              value={slide.text}
+              multiline
+              onChange={(value) => updateSlide(index, { text: value })}
+            />
+            <TextField
+              label="Подпись"
+              value={slide.caption}
+              onChange={(value) => updateSlide(index, { caption: value })}
+            />
             {state.slides.length > 1 && (
-              <button type="button" onClick={() => removeSlide(index)} className="text-[13px]" style={{ color: "var(--danger)" }}>
+              <button
+                type="button"
+                onClick={() => removeSlide(index)}
+                className="text-[13px]"
+                style={{ color: "var(--danger)" }}
+              >
                 Удалить слайд
               </button>
             )}

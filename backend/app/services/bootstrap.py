@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
+from typing import TypeVar
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
@@ -35,12 +37,13 @@ from backend.app.schemas.api import (
     AdminDocumentSchema,
     AdminRoomAssignmentSchema,
     AdminUserSchema,
+    AttendanceStatsSchema,
     BootstrapSchema,
     CampDatesSchema,
     CampSchema,
     CampusCategorySchema,
+    CampusItemSchema,
     CapabilitySchema,
-    AttendanceStatsSchema,
     CurrentUserSchema,
     DocumentSchema,
     EventSchema,
@@ -55,6 +58,8 @@ from backend.app.schemas.api import (
     StorySlideSchema,
     UiStateSchema,
 )
+
+_HidableT = TypeVar("_HidableT")
 
 
 ORGANIZER_CAPABILITIES = CapabilitySchema(
@@ -198,10 +203,8 @@ def _compute_attendance(
         if _resolve_event_status(event) != "cancelled" and _counts_for_attendance(event)
     ]
     total = len(relevant_events)
-    present = sum(
-        1 for event in relevant_events if attendance.get(event.id) == "confirmed"
-    )
-    percentage = int(round(present / total * 100)) if total > 0 else 0
+    present = sum(1 for event in relevant_events if attendance.get(event.id) == "confirmed")
+    percentage = round(present / total * 100) if total > 0 else 0
     return AttendanceStatsSchema(
         present=present,
         total=total,
@@ -335,7 +338,7 @@ def _serialize_campus_category(category: CampusCategory) -> CampusCategorySchema
         id=category.id,
         icon=category.icon,
         title=category.title,
-        items=category.items,
+        items=[CampusItemSchema(**item) for item in category.items],
         isHidden=category.is_hidden,
     )
 
@@ -457,7 +460,9 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
     ).all()
     campus_categories = db.scalars(select(CampusCategory).order_by(CampusCategory.id.asc())).all()
     materials = db.scalars(
-        select(Material).order_by(Material.day.is_(None).asc(), Material.day.asc(), Material.id.asc())
+        select(Material).order_by(
+            Material.day.is_(None).asc(), Material.day.asc(), Material.id.asc()
+        )
     ).all()
     resources = db.scalars(
         select(Resource).order_by(
@@ -492,7 +497,7 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
     # Организатор видит всё (чтобы управлять), участники и преподаватели —
     # только незаскрытое. Skip attendance-relevant события из статистики ниже
     # не требуется: для is_hidden=True такие события у участника не появятся.
-    def visible(items):
+    def visible(items: Iterable[_HidableT]) -> list[_HidableT]:
         if is_organizer:
             return list(items)
         return [item for item in items if not getattr(item, "is_hidden", False)]
@@ -520,22 +525,30 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
     return BootstrapSchema(
         camp=_serialize_camp(camp),
         currentUser=_serialize_current_user(user, attendance_stats, assigned_team_id),
-        events=[_serialize_event(event, state.attendance, event_teachers) for event in visible(events)],
+        events=[
+            _serialize_event(event, state.attendance, event_teachers) for event in visible(events)
+        ],
         people=[_serialize_person(person) for person in people],
         projects=[_serialize_project(project) for project in visible(projects)],
         projectSelectionPhase=camp.project_selection_phase,
         projectPriorities=state.project_priorities,
         projectTeams=team_schemas,
         stories=[_serialize_story(story, state.story_reads) for story in visible(stories)],
-        orgUpdates=[_serialize_org_update(update, state.update_reads) for update in visible(updates)],
+        orgUpdates=[
+            _serialize_org_update(update, state.update_reads) for update in visible(updates)
+        ],
         documents=[_serialize_document(document) for document in documents],
-        campusCategories=[_serialize_campus_category(category) for category in visible(campus_categories)],
+        campusCategories=[
+            _serialize_campus_category(category) for category in visible(campus_categories)
+        ],
         room=_serialize_room(state.room),
         materials=[_serialize_material(material) for material in visible(materials)],
         resources=[_serialize_resource(resource) for resource in visible(resources)],
         adminUsers=[_serialize_admin_user(person) for person in admin_users],
         adminDocuments=[_serialize_admin_document(document) for document in admin_documents],
-        adminRoomAssignments=[_serialize_admin_room_assignment(assignment) for assignment in admin_room_assignments],
+        adminRoomAssignments=[
+            _serialize_admin_room_assignment(assignment) for assignment in admin_room_assignments
+        ],
         ui=UiStateSchema(currentDay=_resolve_current_day(camp), totalDays=camp.total_days),
-        lastSyncedAt=datetime.now(timezone.utc),
+        lastSyncedAt=datetime.now(UTC),
     )

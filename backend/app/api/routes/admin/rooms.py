@@ -7,10 +7,13 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_current_user
 from backend.app.db.session import get_db
 from backend.app.models.entities import RoomAssignment, User
-from backend.app.schemas.api import CreatedEntitySchema, RoomAssignmentUpsertSchema, SimpleStatusSchema
+from backend.app.schemas.api import (
+    CreatedEntitySchema,
+    RoomAssignmentUpsertSchema,
+    SimpleStatusSchema,
+)
 
 from ._helpers import get_or_404, require_organizer
-
 
 router = APIRouter(prefix="/admin/room-assignments", tags=["admin"])
 

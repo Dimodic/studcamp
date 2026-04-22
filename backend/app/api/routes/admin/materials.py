@@ -15,7 +15,6 @@ from ._helpers import (
     parse_enum,
 )
 
-
 router = APIRouter(prefix="/admin/materials", tags=["admin"])
 
 

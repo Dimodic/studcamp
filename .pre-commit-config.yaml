@@ -1,0 +1,40 @@
+# Локальные pre-commit хуки. Запускаются на `git commit`.
+# Установка (одноразово): python -m pip install pre-commit && pre-commit install
+# Ручной прогон:          pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.11
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npx prettier --write
+        language: system
+        types_or: [javascript, jsx, ts, tsx, json, css, markdown, yaml]
+        exclude: ^(backend/|android/|dist/|public/|node_modules/|scripts/|screenshots/|\.omx/|\.claude/|package-lock\.json)
+
+      - id: eslint
+        name: eslint
+        entry: npx eslint --fix
+        language: system
+        types_or: [ts, tsx]
+        files: ^app/

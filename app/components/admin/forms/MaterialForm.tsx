@@ -50,14 +50,23 @@ interface MaterialFormProps {
 export function MaterialForm({ state, onChange, eventOptions = [] }: MaterialFormProps) {
   return (
     <>
-      <TextField label="Название" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
+      <TextField
+        label="Название"
+        value={state.title}
+        onChange={(value) => onChange({ ...state, title: value })}
+      />
       <SelectField
         label="Тип"
         value={state.type}
         onChange={(value) => onChange({ ...state, type: value as MaterialType })}
         options={MATERIAL_TYPE_OPTIONS}
       />
-      <TextField label="День" type="number" value={state.day} onChange={(value) => onChange({ ...state, day: value })} />
+      <TextField
+        label="День"
+        type="number"
+        value={state.day}
+        onChange={(value) => onChange({ ...state, day: value })}
+      />
       <SelectField
         label="Событие"
         value={state.eventId}
@@ -65,10 +74,26 @@ export function MaterialForm({ state, onChange, eventOptions = [] }: MaterialFor
         options={eventOptions.map((event) => ({ value: event.id, label: event.label }))}
         includeEmpty
       />
-      <TextField label="Тема" value={state.topic} onChange={(value) => onChange({ ...state, topic: value })} />
-      <TextField label="Размер файла" value={state.fileSize} onChange={(value) => onChange({ ...state, fileSize: value })} />
-      <TextField label="URL" value={state.url} onChange={(value) => onChange({ ...state, url: value })} />
-      <ToggleField label="Пометить как новое" checked={state.isNew} onChange={(value) => onChange({ ...state, isNew: value })} />
+      <TextField
+        label="Тема"
+        value={state.topic}
+        onChange={(value) => onChange({ ...state, topic: value })}
+      />
+      <TextField
+        label="Размер файла"
+        value={state.fileSize}
+        onChange={(value) => onChange({ ...state, fileSize: value })}
+      />
+      <TextField
+        label="URL"
+        value={state.url}
+        onChange={(value) => onChange({ ...state, url: value })}
+      />
+      <ToggleField
+        label="Пометить как новое"
+        checked={state.isNew}
+        onChange={(value) => onChange({ ...state, isNew: value })}
+      />
     </>
   );
 }

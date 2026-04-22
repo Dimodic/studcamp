@@ -10,7 +10,6 @@ from backend.app.schemas.api import CampUpsertSchema, SimpleStatusSchema
 
 from ._helpers import get_or_404, require_organizer
 
-
 router = APIRouter(prefix="/admin/camp", tags=["admin"])
 
 

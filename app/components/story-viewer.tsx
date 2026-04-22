@@ -61,7 +61,10 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
   if (!story || !slide) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "var(--text-primary)" }}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ background: "var(--text-primary)" }}
+    >
       {/* Background image — subtle, documentary */}
       <img
         src={slide.image}
@@ -69,12 +72,22 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
         className="absolute inset-0 w-full h-full object-cover"
         style={{ opacity: 0.35 }}
       />
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(26,26,26,0.7) 0%, rgba(26,26,26,0.3) 40%, rgba(26,26,26,0.85) 100%)" }} />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(26,26,26,0.7) 0%, rgba(26,26,26,0.3) 40%, rgba(26,26,26,0.85) 100%)",
+        }}
+      />
 
       {/* Progress bars */}
       <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-10">
         {story.slides.map((_, i) => (
-          <div key={i} className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.2)" }}>
+          <div
+            key={i}
+            className="flex-1 h-[3px] rounded-full overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.2)" }}
+          >
             <div
               className="h-full rounded-full"
               style={{
@@ -105,8 +118,17 @@ export function StoryViewer({ stories, startIndex, onClose, onMarkRead }: StoryV
 
       {/* Content — service-format, large type */}
       <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
-        <p className="text-[12px] tracking-widest uppercase mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
-          {story.type === "urgent" ? "Важное" : story.type === "navigation" ? "Навигация" : story.type === "project" ? "Проекты" : "Информация"}
+        <p
+          className="text-[12px] tracking-widest uppercase mb-3"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          {story.type === "urgent"
+            ? "Важное"
+            : story.type === "navigation"
+              ? "Навигация"
+              : story.type === "project"
+                ? "Проекты"
+                : "Информация"}
         </p>
         <h2 className="text-[26px] text-white mb-3" style={{ fontWeight: 600, lineHeight: 1.2 }}>
           {slide.text}

@@ -4,7 +4,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_SEED_PATH = PROJECT_ROOT / "backend" / "seeds" / "initial_data.json"
 

@@ -17,7 +17,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
       style={{ background: style.bg, color: style.color }}
     >
       {status === "in_progress" && (
-        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: style.color }} />
+        <span
+          className="w-1.5 h-1.5 rounded-full animate-pulse"
+          style={{ backgroundColor: style.color }}
+        />
       )}
       {EVENT_STATUS_LABELS[status] ?? status}
     </span>

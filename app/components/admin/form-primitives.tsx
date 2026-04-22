@@ -1,7 +1,8 @@
 import type { MouseEvent } from "react";
 import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 
-const INPUT_CLASSNAME = "w-full border rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] outline-none";
+const INPUT_CLASSNAME =
+  "w-full border rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] outline-none";
 const INPUT_STYLE = {
   borderColor: "var(--line-subtle)",
   color: "var(--text-primary)",
@@ -29,7 +30,14 @@ interface TextFieldProps {
   placeholder?: string;
 }
 
-export function TextField({ label, value, onChange, type = "text", multiline = false, placeholder }: TextFieldProps) {
+export function TextField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  multiline = false,
+  placeholder,
+}: TextFieldProps) {
   const displayValue = value == null ? "" : String(value);
   return (
     <div>
@@ -70,7 +78,13 @@ interface SelectFieldProps {
   includeEmpty?: boolean;
 }
 
-export function SelectField({ label, value, onChange, options, includeEmpty = false }: SelectFieldProps) {
+export function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  includeEmpty = false,
+}: SelectFieldProps) {
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
@@ -99,8 +113,15 @@ interface ToggleFieldProps {
 
 export function ToggleField({ label, checked, onChange }: ToggleFieldProps) {
   return (
-    <label className="flex items-center gap-2.5 text-[14px]" style={{ color: "var(--text-primary)" }}>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <label
+      className="flex items-center gap-2.5 text-[14px]"
+      style={{ color: "var(--text-primary)" }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
       {label}
     </label>
   );
@@ -131,7 +152,11 @@ export function ActionIconButton({ kind, label, onClick, className = "" }: Actio
     ? "hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] hover:border-[var(--danger-soft)]"
     : "hover:bg-[var(--bg-subtle)] hover:border-[var(--line-strong)] hover:text-[var(--text-primary)]";
   const mutedStyle = isMuted
-    ? { background: "var(--bg-subtle)", borderColor: "var(--line-subtle)", color: "var(--text-tertiary)" }
+    ? {
+        background: "var(--bg-subtle)",
+        borderColor: "var(--line-subtle)",
+        color: "var(--text-tertiary)",
+      }
     : undefined;
   return (
     <button

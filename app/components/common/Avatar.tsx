@@ -1,7 +1,15 @@
 // Палитра из айдентики Яндекс Образования (см. styles/theme.css — --accent-*).
 const COLORS = [
-  "#799DFF", "#FDC2B4", "#DAD06E", "#FF37B9", "#9586E5",
-  "#5A9BB9", "#A48EEF", "#82E5F0", "#F9D1BD", "#F5EB7D",
+  "#799DFF",
+  "#FDC2B4",
+  "#DAD06E",
+  "#FF37B9",
+  "#9586E5",
+  "#5A9BB9",
+  "#A48EEF",
+  "#82E5F0",
+  "#F9D1BD",
+  "#F5EB7D",
   "#7F5DD8",
 ];
 

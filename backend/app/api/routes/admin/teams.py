@@ -25,7 +25,6 @@ from backend.app.schemas.api import SimpleStatusSchema
 
 from ._helpers import get_or_404, require_organizer, resolve_camp_id
 
-
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
@@ -68,7 +67,8 @@ def create_team(
     require_organizer(current_user)
     project = get_or_404(db, Project, project_id)
     existing_numbers = [
-        row.number for row in db.scalars(select(ProjectTeam).where(ProjectTeam.project_id == project_id))
+        row.number
+        for row in db.scalars(select(ProjectTeam).where(ProjectTeam.project_id == project_id))
     ]
     next_number = (max(existing_numbers) + 1) if existing_numbers else 1
     team = ProjectTeam(id=f"team-{uuid4().hex[:12]}", project_id=project.id, number=next_number)
@@ -143,7 +143,9 @@ def auto_distribute(
     participants = list(
         db.scalars(
             select(User)
-            .where(User.camp_id == camp_id, User.role == UserRole.participant, User.is_active.is_(True))
+            .where(
+                User.camp_id == camp_id, User.role == UserRole.participant, User.is_active.is_(True)
+            )
             .order_by(User.id.asc())
         )
     )
@@ -151,17 +153,15 @@ def auto_distribute(
     already_assigned: set[str] = {row.user_id for row in db.scalars(select(ProjectAssignment))}
 
     preferences_by_user: dict[str, list[str]] = defaultdict(list)
-    for row in db.scalars(select(ProjectPreference).order_by(ProjectPreference.priority.asc())):
-        preferences_by_user[row.user_id].append(row.project_id)
+    for pref in db.scalars(select(ProjectPreference).order_by(ProjectPreference.priority.asc())):
+        preferences_by_user[pref.user_id].append(pref.project_id)
 
-    projects_by_id = {
-        project.id: project for project in db.scalars(select(Project))
-    }
+    projects_by_id = {project.id: project for project in db.scalars(select(Project))}
 
     # Текущее заполнение команд.
     team_fill: dict[str, int] = defaultdict(int)
-    for row in db.scalars(select(ProjectAssignment)):
-        team_fill[row.team_id] += 1
+    for assignment in db.scalars(select(ProjectAssignment)):
+        team_fill[assignment.team_id] += 1
 
     teams_by_project: dict[str, list[ProjectTeam]] = defaultdict(list)
     for team in db.scalars(select(ProjectTeam).order_by(ProjectTeam.number.asc())):
@@ -171,21 +171,21 @@ def auto_distribute(
         project = projects_by_id.get(project_id)
         if project is None:
             return None
-        for team in teams_by_project.get(project_id, []):
-            if team_fill[team.id] < project.max_team:
-                return team
+        for existing_team in teams_by_project.get(project_id, []):
+            if team_fill[existing_team.id] < project.max_team:
+                return existing_team
         # Автоматически создаём следующую команду, если существующие заполнены.
         existing = teams_by_project.get(project_id, [])
         next_number = (max((team.number for team in existing), default=0)) + 1
-        team = ProjectTeam(
+        new_team = ProjectTeam(
             id=f"team-{uuid4().hex[:12]}",
             project_id=project_id,
             number=next_number,
         )
-        db.add(team)
+        db.add(new_team)
         db.flush()
-        teams_by_project[project_id].append(team)
-        return team
+        teams_by_project[project_id].append(new_team)
+        return new_team
 
     assigned_count = 0
     unassigned: list[str] = []
@@ -195,11 +195,11 @@ def auto_distribute(
         prefs = preferences_by_user.get(user.id, [])
         placed = False
         for project_id in prefs:
-            team = ensure_team_with_slot(project_id)
-            if team is None:
+            team_for_user = ensure_team_with_slot(project_id)
+            if team_for_user is None:
                 continue
-            db.add(ProjectAssignment(user_id=user.id, team_id=team.id))
-            team_fill[team.id] += 1
+            db.add(ProjectAssignment(user_id=user.id, team_id=team_for_user.id))
+            team_fill[team_for_user.id] += 1
             assigned_count += 1
             placed = True
             break

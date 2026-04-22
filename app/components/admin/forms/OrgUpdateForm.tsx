@@ -35,15 +35,29 @@ interface OrgUpdateFormProps {
 export function OrgUpdateForm({ state, onChange }: OrgUpdateFormProps) {
   return (
     <>
-      <TextField label="Текст" value={state.text} multiline onChange={(value) => onChange({ ...state, text: value })} />
-      <TextField label="Время" value={state.time} onChange={(value) => onChange({ ...state, time: value })} placeholder="10:35" />
+      <TextField
+        label="Текст"
+        value={state.text}
+        multiline
+        onChange={(value) => onChange({ ...state, text: value })}
+      />
+      <TextField
+        label="Время"
+        value={state.time}
+        onChange={(value) => onChange({ ...state, time: value })}
+        placeholder="10:35"
+      />
       <SelectField
         label="Тип"
         value={state.type}
         onChange={(value) => onChange({ ...state, type: value as UpdateType })}
         options={UPDATE_TYPE_OPTIONS}
       />
-      <ToggleField label="Пометить как новое" checked={state.isNew} onChange={(value) => onChange({ ...state, isNew: value })} />
+      <ToggleField
+        label="Пометить как новое"
+        checked={state.isNew}
+        onChange={(value) => onChange({ ...state, isNew: value })}
+      />
     </>
   );
 }

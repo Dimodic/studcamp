@@ -21,7 +21,10 @@ export function toNumberOrNull(value: string | number | null | undefined): numbe
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function toNumberOrFallback(value: string | number | null | undefined, fallback: number): number {
+export function toNumberOrFallback(
+  value: string | number | null | undefined,
+  fallback: number,
+): number {
   const parsed = toNumberOrNull(value);
   return parsed ?? fallback;
 }

@@ -1,5 +1,14 @@
 import { useMemo, useState, type ChangeEvent } from "react";
-import { Check, ChevronDown, ChevronUp, Loader2, Paperclip, Sparkles, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Paperclip,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { SurfaceCard } from "../common";
 import { useAppData } from "../../lib/app-data";
 import {
@@ -73,7 +82,9 @@ function summarizeItem(payload: Record<string, unknown>): string {
 
 export function MagicBlock() {
   const { parseLlmContent, createAdminEntity } = useAppData();
-  const [settings, setSettings] = useState<LlmSettings>(() => loadLlmSettings() ?? DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<LlmSettings>(
+    () => loadLlmSettings() ?? DEFAULT_SETTINGS,
+  );
   const [showSettings, setShowSettings] = useState(() => {
     const saved = loadLlmSettings();
     return !saved || !saved.baseUrl || !saved.model;
@@ -173,12 +184,16 @@ export function MagicBlock() {
     try {
       await createAdminEntity(ADMIN_PATHS[item.kind], item.payload);
       setItems((prev) =>
-        prev.map((other) => (other.id === item.id ? { ...other, applied: true, error: undefined } : other)),
+        prev.map((other) =>
+          other.id === item.id ? { ...other, applied: true, error: undefined } : other,
+        ),
       );
       return true;
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : "Не удалось сохранить";
-      setItems((prev) => prev.map((other) => (other.id === item.id ? { ...other, error: message } : other)));
+      setItems((prev) =>
+        prev.map((other) => (other.id === item.id ? { ...other, error: message } : other)),
+      );
       return false;
     }
   };
@@ -290,7 +305,10 @@ export function MagicBlock() {
             </label>
           </div>
 
-          <div className="flex items-center justify-between text-[11.5px]" style={{ color: "var(--text-tertiary)" }}>
+          <div
+            className="flex items-center justify-between text-[11.5px]"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             <span>Настройки хранятся только в этом браузере.</span>
             {hasCustomSettings && (
               <button
@@ -348,12 +366,7 @@ export function MagicBlock() {
           style={{ borderColor: "var(--line-subtle)", color: "var(--text-secondary)" }}
         >
           <Paperclip size={14} /> Файлы
-          <input
-            type="file"
-            multiple
-            onChange={handleFiles}
-            className="hidden"
-          />
+          <input type="file" multiple onChange={handleFiles} className="hidden" />
         </label>
         <button
           type="button"
@@ -391,7 +404,10 @@ export function MagicBlock() {
       {items.length > 0 && (
         <div className="mt-5 space-y-2.5">
           <div className="flex items-center justify-between">
-            <p className="text-[11.5px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+            <p
+              className="text-[11.5px] uppercase tracking-wider"
+              style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+            >
               Найдено: {items.length}
             </p>
             <button
@@ -430,10 +446,16 @@ export function MagicBlock() {
                   {item.applied ? <Check size={15} /> : <Sparkles size={14} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] uppercase tracking-wider" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+                  <p
+                    className="text-[11px] uppercase tracking-wider"
+                    style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+                  >
                     {ENTITY_NOUN[item.kind]}
                   </p>
-                  <p className="text-[14px] truncate" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                  <p
+                    className="text-[14px] truncate"
+                    style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                  >
                     {summary}
                   </p>
                   {item.error && (
@@ -456,7 +478,11 @@ export function MagicBlock() {
                       type="button"
                       onClick={() => void applyItem(item)}
                       className="text-[12.5px] px-3 py-1.5 rounded-[var(--radius-sm)] transition-colors"
-                      style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 600 }}
+                      style={{
+                        background: "var(--brand)",
+                        color: "var(--brand-contrast)",
+                        fontWeight: 600,
+                      }}
                     >
                       Применить
                     </button>
@@ -478,7 +504,11 @@ export function MagicBlock() {
           if (!editState) return;
           await createAdminEntity(ADMIN_PATHS[editState.item.kind], payload);
           setItems((prev) =>
-            prev.map((other) => (other.id === editState.item.id ? { ...other, applied: true, error: undefined } : other)),
+            prev.map((other) =>
+              other.id === editState.item.id
+                ? { ...other, applied: true, error: undefined }
+                : other,
+            ),
           );
         }}
       />

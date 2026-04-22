@@ -15,7 +15,12 @@ export default function App() {
   if (mode === "mobile" && !inIframe) {
     const url = new URL(window.location.href);
     url.searchParams.set("__viewport", "mobile");
-    return <DevMobileFrame src={url.toString()} toggle={showDevToggle ? <DevViewportToggle /> : undefined} />;
+    return (
+      <DevMobileFrame
+        src={url.toString()}
+        toggle={showDevToggle ? <DevViewportToggle /> : undefined}
+      />
+    );
   }
 
   return (

@@ -22,7 +22,6 @@ from backend.app.schemas.api import SimpleStatusSchema
 
 from ._helpers import get_or_404, require_organizer
 
-
 router = APIRouter(prefix="/admin/visibility", tags=["admin"])
 
 
@@ -54,7 +53,8 @@ def set_visibility(
     if model is None:
         raise HTTPException(status_code=404, detail=f"Unknown resource: {resource}")
     entity = get_or_404(db, model, entity_id)
-    entity.is_hidden = payload.hidden
+    # Все модели в RESOURCE_MODELS объявляют is_hidden (проверено миграцией 0006).
+    entity.is_hidden = payload.hidden  # type: ignore[attr-defined]
     db.add(entity)
     db.commit()
     return SimpleStatusSchema(ok=True)

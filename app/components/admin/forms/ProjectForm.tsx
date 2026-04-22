@@ -59,7 +59,11 @@ interface ProjectFormProps {
 export function ProjectForm({ state, onChange }: ProjectFormProps) {
   return (
     <>
-      <TextField label="Название" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
+      <TextField
+        label="Название"
+        value={state.title}
+        onChange={(value) => onChange({ ...state, title: value })}
+      />
       <TextField
         label="Краткое описание"
         value={state.shortDescription}
@@ -73,20 +77,42 @@ export function ProjectForm({ state, onChange }: ProjectFormProps) {
         onChange={(value) => onChange({ ...state, description: value })}
         placeholder="Абзацы разделяйте пустой строкой"
       />
-      <TextField label="Направление" value={state.direction} onChange={(value) => onChange({ ...state, direction: value })} />
+      <TextField
+        label="Направление"
+        value={state.direction}
+        onChange={(value) => onChange({ ...state, direction: value })}
+      />
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Мин. команда" type="number" value={state.minTeam} onChange={(value) => onChange({ ...state, minTeam: value })} />
-        <TextField label="Макс. команда" type="number" value={state.maxTeam} onChange={(value) => onChange({ ...state, maxTeam: value })} />
+        <TextField
+          label="Мин. команда"
+          type="number"
+          value={state.minTeam}
+          onChange={(value) => onChange({ ...state, minTeam: value })}
+        />
+        <TextField
+          label="Макс. команда"
+          type="number"
+          value={state.maxTeam}
+          onChange={(value) => onChange({ ...state, maxTeam: value })}
+        />
       </div>
 
-      <TextField label="Имя ментора" value={state.mentorName} onChange={(value) => onChange({ ...state, mentorName: value })} />
+      <TextField
+        label="Имя ментора"
+        value={state.mentorName}
+        onChange={(value) => onChange({ ...state, mentorName: value })}
+      />
       <TextField
         label="Должность и компания"
         value={state.mentorPosition}
         onChange={(value) => onChange({ ...state, mentorPosition: value })}
       />
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Город ментора" value={state.mentorCity} onChange={(value) => onChange({ ...state, mentorCity: value })} />
+        <TextField
+          label="Город ментора"
+          value={state.mentorCity}
+          onChange={(value) => onChange({ ...state, mentorCity: value })}
+        />
         <TextField
           label="Telegram ментора"
           value={state.mentorTelegram}

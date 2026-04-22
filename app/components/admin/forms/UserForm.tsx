@@ -61,24 +61,49 @@ interface UserFormProps {
 export function UserForm({ state, onChange, mode }: UserFormProps) {
   return (
     <>
-      <TextField label="Имя" value={state.name} onChange={(value) => onChange({ ...state, name: value })} />
+      <TextField
+        label="Имя"
+        value={state.name}
+        onChange={(value) => onChange({ ...state, name: value })}
+      />
       <SelectField
         label="Роль"
         value={state.role}
         onChange={(value) => onChange({ ...state, role: value as UserRole })}
         options={ROLE_OPTIONS}
       />
-      <TextField label="ВУЗ / компания" value={state.university} onChange={(value) => onChange({ ...state, university: value })} />
-      <TextField label="Город" value={state.city} onChange={(value) => onChange({ ...state, city: value })} />
-      <TextField label="Telegram" value={state.telegram} onChange={(value) => onChange({ ...state, telegram: value })} />
-      <TextField label="Фото URL" value={state.photo} onChange={(value) => onChange({ ...state, photo: value })} />
+      <TextField
+        label="ВУЗ / компания"
+        value={state.university}
+        onChange={(value) => onChange({ ...state, university: value })}
+      />
+      <TextField
+        label="Город"
+        value={state.city}
+        onChange={(value) => onChange({ ...state, city: value })}
+      />
+      <TextField
+        label="Telegram"
+        value={state.telegram}
+        onChange={(value) => onChange({ ...state, telegram: value })}
+      />
+      <TextField
+        label="Фото URL"
+        value={state.photo}
+        onChange={(value) => onChange({ ...state, photo: value })}
+      />
       <SelectField
         label="Видимость"
         value={state.visibility}
         onChange={(value) => onChange({ ...state, visibility: value as VisibilityMode })}
         options={VISIBILITY_OPTIONS}
       />
-      <TextField label="Email" value={state.email} type="email" onChange={(value) => onChange({ ...state, email: value })} />
+      <TextField
+        label="Email"
+        value={state.email}
+        type="email"
+        onChange={(value) => onChange({ ...state, email: value })}
+      />
       <TextField
         label="Пароль"
         value={state.password}
@@ -87,7 +112,11 @@ export function UserForm({ state, onChange, mode }: UserFormProps) {
         placeholder={mode === "edit" ? "Оставьте пустым, чтобы не менять" : ""}
       />
       <div className="space-y-2">
-        <ToggleField label="Активен" checked={state.isActive} onChange={(value) => onChange({ ...state, isActive: value })} />
+        <ToggleField
+          label="Активен"
+          checked={state.isActive}
+          onChange={(value) => onChange({ ...state, isActive: value })}
+        />
         <ToggleField
           label="Показывать в списке людей"
           checked={state.showInPeople}

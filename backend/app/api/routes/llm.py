@@ -16,7 +16,6 @@ from backend.app.db.session import get_db
 from backend.app.models.entities import User, UserRole
 from backend.app.services.llm_prompt import SYSTEM_PROMPT
 
-
 router = APIRouter(prefix="/llm", tags=["llm"])
 
 
@@ -56,9 +55,32 @@ TEXT_MIME_EXACT = {
     "application/x-tex",
 }
 TEXT_EXTENSIONS = {
-    ".txt", ".md", ".markdown", ".csv", ".tsv", ".json", ".jsonl", ".log",
-    ".yml", ".yaml", ".html", ".htm", ".xml", ".srt", ".rtf", ".sh", ".py",
-    ".ts", ".tsx", ".js", ".jsx", ".sql", ".toml", ".ini", ".cfg", ".env",
+    ".txt",
+    ".md",
+    ".markdown",
+    ".csv",
+    ".tsv",
+    ".json",
+    ".jsonl",
+    ".log",
+    ".yml",
+    ".yaml",
+    ".html",
+    ".htm",
+    ".xml",
+    ".srt",
+    ".rtf",
+    ".sh",
+    ".py",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".sql",
+    ".toml",
+    ".ini",
+    ".cfg",
+    ".env",
 }
 
 
@@ -73,9 +95,7 @@ def _is_text_like(attachment: LlmAttachment) -> bool:
         return True
     if mime in TEXT_MIME_EXACT:
         return True
-    if _attachment_extension(attachment.name) in TEXT_EXTENSIONS:
-        return True
-    return False
+    return _attachment_extension(attachment.name) in TEXT_EXTENSIONS
 
 
 def _is_image(attachment: LlmAttachment) -> bool:
@@ -116,7 +136,11 @@ def _build_content_parts(text: str, attachments: list[LlmAttachment]) -> list[di
 
     text_payload = prompt_text
     if inline_blocks:
-        text_payload = "\n\n".join([prompt_text, *inline_blocks]) if prompt_text else "\n\n".join(inline_blocks)
+        text_payload = (
+            "\n\n".join([prompt_text, *inline_blocks])
+            if prompt_text
+            else "\n\n".join(inline_blocks)
+        )
     if not text_payload and not binary_attachments:
         text_payload = "(пустой ввод)"
 
@@ -157,11 +181,14 @@ def _extract_json_block(raw: str) -> dict[str, Any]:
         if brace_match:
             candidate = brace_match.group(0)
     try:
-        return json.loads(candidate)
+        decoded: dict[str, Any] = json.loads(candidate)
+        return decoded
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=502,
-            detail=f"Модель вернула не-JSON ответ: {exc.msg}. Попробуй другую модель или уточни текст.",
+            detail=(
+                f"Модель вернула не-JSON ответ: {exc.msg}. Попробуй другую модель или уточни текст."
+            ),
         ) from exc
 
 
@@ -196,12 +223,15 @@ def _call_openai_compatible(
         with httpx.Client(timeout=180) as client:
             response = client.post(endpoint, headers=headers, json=body)
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Не удалось связаться с {endpoint}: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Не удалось связаться с {endpoint}: {exc}"
+        ) from exc
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=response.text)
     data = response.json()
     try:
-        return data["choices"][0]["message"]["content"]
+        content: str = data["choices"][0]["message"]["content"]
+        return content
     except (KeyError, IndexError, TypeError) as exc:
         raise HTTPException(status_code=502, detail="Неожиданный ответ провайдера") from exc
 
@@ -210,7 +240,7 @@ def _call_openai_compatible(
 def parse_content(
     payload: LlmParseRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),  # noqa: ARG001 — только для проверки авторизации
+    db: Session = Depends(get_db),
 ) -> LlmParseResponse:
     if current_user.role != UserRole.organizer:
         raise HTTPException(status_code=403, detail="Organizer access required")

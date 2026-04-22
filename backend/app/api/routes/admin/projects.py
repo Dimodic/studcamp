@@ -10,7 +10,6 @@ from backend.app.schemas.api import CreatedEntitySchema, ProjectUpsertSchema, Si
 
 from ._helpers import generate_id, get_or_404, require_organizer
 
-
 router = APIRouter(prefix="/admin/projects", tags=["admin"])
 
 

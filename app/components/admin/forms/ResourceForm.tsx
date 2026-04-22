@@ -50,7 +50,11 @@ interface ResourceFormProps {
 export function ResourceForm({ state, onChange, eventOptions = [] }: ResourceFormProps) {
   return (
     <>
-      <TextField label="Название" value={state.title} onChange={(value) => onChange({ ...state, title: value })} />
+      <TextField
+        label="Название"
+        value={state.title}
+        onChange={(value) => onChange({ ...state, title: value })}
+      />
       <SelectField
         label="Категория"
         value={state.category}
@@ -69,8 +73,17 @@ export function ResourceForm({ state, onChange, eventOptions = [] }: ResourceFor
         multiline
         onChange={(value) => onChange({ ...state, description: value })}
       />
-      <TextField label="URL" value={state.url} onChange={(value) => onChange({ ...state, url: value })} />
-      <TextField label="День" type="number" value={state.day} onChange={(value) => onChange({ ...state, day: value })} />
+      <TextField
+        label="URL"
+        value={state.url}
+        onChange={(value) => onChange({ ...state, url: value })}
+      />
+      <TextField
+        label="День"
+        type="number"
+        value={state.day}
+        onChange={(value) => onChange({ ...state, day: value })}
+      />
       <SelectField
         label="Событие"
         value={state.eventId}
@@ -78,7 +91,11 @@ export function ResourceForm({ state, onChange, eventOptions = [] }: ResourceFor
         options={eventOptions.map((event) => ({ value: event.id, label: event.label }))}
         includeEmpty
       />
-      <ToggleField label="Пометить как новое" checked={state.isNew} onChange={(value) => onChange({ ...state, isNew: value })} />
+      <ToggleField
+        label="Пометить как новое"
+        checked={state.isNew}
+        onChange={(value) => onChange({ ...state, isNew: value })}
+      />
     </>
   );
 }

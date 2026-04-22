@@ -13,7 +13,12 @@ export function ImageWithFallback(props: ImgHTMLAttributes<HTMLImageElement>) {
         className={`inline-flex items-center justify-center bg-[var(--bg-subtle)] ${className ?? ""}`}
         style={style}
       >
-        <img src={ERROR_IMG_SRC} alt="Изображение не загрузилось" {...rest} data-original-url={src} />
+        <img
+          src={ERROR_IMG_SRC}
+          alt="Изображение не загрузилось"
+          {...rest}
+          data-original-url={src}
+        />
       </div>
     );
   }

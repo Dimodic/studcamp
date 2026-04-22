@@ -13,7 +13,9 @@ export interface RoomAssignmentFormState {
   rulesText: string;
 }
 
-export function buildRoomAssignmentInitial(entity?: Partial<AdminRoomAssignment>): RoomAssignmentFormState {
+export function buildRoomAssignmentInitial(
+  entity?: Partial<AdminRoomAssignment>,
+): RoomAssignmentFormState {
   return {
     userId: entity?.userId ?? "",
     number: entity?.number ?? "",
@@ -53,10 +55,23 @@ export function RoomAssignmentForm({ state, onChange, userOptions = [] }: RoomAs
         options={userOptions.map((user) => ({ value: user.id, label: user.label }))}
       />
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Комната" value={state.number} onChange={(value) => onChange({ ...state, number: value })} />
-        <TextField label="Этаж" type="number" value={state.floor} onChange={(value) => onChange({ ...state, floor: value })} />
+        <TextField
+          label="Комната"
+          value={state.number}
+          onChange={(value) => onChange({ ...state, number: value })}
+        />
+        <TextField
+          label="Этаж"
+          type="number"
+          value={state.floor}
+          onChange={(value) => onChange({ ...state, floor: value })}
+        />
       </div>
-      <TextField label="Здание" value={state.building} onChange={(value) => onChange({ ...state, building: value })} />
+      <TextField
+        label="Здание"
+        value={state.building}
+        onChange={(value) => onChange({ ...state, building: value })}
+      />
       <TextField
         label="Соседи"
         value={state.neighborsText}

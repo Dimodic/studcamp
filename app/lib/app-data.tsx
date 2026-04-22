@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { api } from "./api";
 import { cacheStorage } from "./cache";
 import type { AdminResourcePath, BootstrapPayload, Event, VisibilityMode } from "./domain";
@@ -25,7 +33,11 @@ interface AppDataContextValue {
   updateProfilePreferences: (payload: ProfilePreferencesInput) => Promise<void>;
   checkInEvent: (eventId: string) => Promise<void>;
   createAdminEntity: (resource: AdminResourcePath, payload: unknown) => Promise<string>;
-  updateAdminEntity: (resource: AdminResourcePath, entityId: string, payload: unknown) => Promise<void>;
+  updateAdminEntity: (
+    resource: AdminResourcePath,
+    entityId: string,
+    payload: unknown,
+  ) => Promise<void>;
   deleteAdminEntity: (resource: AdminResourcePath, entityId: string) => Promise<void>;
   parseLlmContent: (input: {
     baseUrl: string;
@@ -51,7 +63,9 @@ interface AppDataContextValue {
     hidden: boolean,
   ) => Promise<void>;
   setProjectPhase: (phase: string) => Promise<void>;
-  createProjectTeam: (projectId: string) => Promise<{ id: string; projectId: string; number: number }>;
+  createProjectTeam: (
+    projectId: string,
+  ) => Promise<{ id: string; projectId: string; number: number }>;
   deleteProjectTeam: (teamId: string) => Promise<void>;
   setProjectAssignment: (userId: string, teamId: string | null) => Promise<void>;
   autoDistributeAssignments: () => Promise<{ assigned: number; unassigned: string[] }>;
@@ -131,7 +145,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         setSyncStatus("fresh");
         setError(null);
       } catch (nextError) {
-        const message = nextError instanceof Error ? nextError.message : "Не удалось синхронизировать данные";
+        const message =
+          nextError instanceof Error ? nextError.message : "Не удалось синхронизировать данные";
         if (cachedBootstrap) {
           setStatus("authenticated");
           setSyncStatus("stale");
@@ -225,7 +240,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       if (data) {
         const nextBootstrap = touchBootstrap({
           ...data,
-          stories: data.stories.map((story) => (story.id === storyId ? { ...story, read: true } : story)),
+          stories: data.stories.map((story) =>
+            story.id === storyId ? { ...story, read: true } : story,
+          ),
         });
         await persistBootstrap(nextBootstrap);
       }
@@ -244,7 +261,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     async (updateIds: string[] = []) => {
       const authToken = requireToken();
       if (data) {
-        const idsToMark = updateIds.length > 0 ? new Set(updateIds) : new Set(data.orgUpdates.map((u) => u.id));
+        const idsToMark =
+          updateIds.length > 0 ? new Set(updateIds) : new Set(data.orgUpdates.map((u) => u.id));
         const nextBootstrap = touchBootstrap({
           ...data,
           orgUpdates: data.orgUpdates.map((update) =>
@@ -257,7 +275,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       try {
         await api.markUpdatesRead(authToken, updateIds);
       } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось обновить уведомления");
+        setError(
+          nextError instanceof Error ? nextError.message : "Не удалось обновить уведомления",
+        );
         await refresh();
       }
     },
@@ -274,7 +294,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       try {
         await api.saveProjectPriorities(authToken, projectIds);
       } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось сохранить приоритеты");
+        setError(
+          nextError instanceof Error ? nextError.message : "Не удалось сохранить приоритеты",
+        );
         await refresh();
       }
     },
@@ -304,7 +326,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       try {
         await api.updateProfilePreferences(authToken, payload);
       } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось сохранить настройки профиля");
+        setError(
+          nextError instanceof Error ? nextError.message : "Не удалось сохранить настройки профиля",
+        );
         await refresh();
       }
     },

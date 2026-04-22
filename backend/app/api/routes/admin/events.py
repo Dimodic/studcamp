@@ -50,7 +50,9 @@ def _sync_teachers(db: Session, event: Event, teacher_ids: list[str]) -> None:
     teachers = (
         db.scalars(select(User).where(User.id.in_(resolved_ids))).all() if resolved_ids else []
     )
-    if len(teachers) != len(resolved_ids) or any(teacher.role != UserRole.teacher for teacher in teachers):
+    if len(teachers) != len(resolved_ids) or any(
+        teacher.role != UserRole.teacher for teacher in teachers
+    ):
         raise HTTPException(status_code=400, detail="teacherIds must reference teacher users")
     db.execute(delete(EventTeacher).where(EventTeacher.event_id == event.id))
     for teacher_id in resolved_ids:

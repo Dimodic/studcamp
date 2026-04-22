@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   BookOpen,
@@ -222,13 +222,13 @@ export function SchedulePage() {
         const node = dayRefs.current.get(target.day);
         node?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
-      navigate("/schedule", { replace: true });
+      void navigate("/schedule", { replace: true });
       return;
     }
 
     if (adminAction === "create-event" && data.currentUser.capabilities.canCreateEvents) {
       setAdminState({ kind: "event", mode: "create" });
-      navigate("/schedule", { replace: true });
+      void navigate("/schedule", { replace: true });
     }
   }, [data, location.search, navigate]);
 
@@ -272,9 +272,10 @@ export function SchedulePage() {
   const teacherOptions = (data.adminUsers.length > 0 ? data.adminUsers : data.people)
     .filter((person) => person.role === "teacher")
     .map((person) => ({ id: person.id, label: person.name }));
-  const manageableEventOptions = (currentUser.capabilities.canEditAllEvents
-    ? data.events
-    : data.events.filter((event) => event.teacherIds.includes(currentUser.id))
+  const manageableEventOptions = (
+    currentUser.capabilities.canEditAllEvents
+      ? data.events
+      : data.events.filter((event) => event.teacherIds.includes(currentUser.id))
   ).map((event) => ({ id: event.id, label: `${event.title} · ${event.date}` }));
 
   return (
@@ -284,7 +285,10 @@ export function SchedulePage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-[var(--text-primary)]">Расписание</h1>
-              <p className="text-[13px] mt-1 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="text-[13px] mt-1 flex items-center gap-1.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 <CalendarDays size={14} /> День {ui.currentDay} из {ui.totalDays}
               </p>
             </div>
@@ -350,8 +354,14 @@ export function SchedulePage() {
                         <span
                           className="text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"
                           style={{
-                            background: group.day === ui.currentDay ? "var(--brand-soft)" : "var(--bg-subtle)",
-                            color: group.day === ui.currentDay ? "var(--text-primary)" : "var(--text-secondary)",
+                            background:
+                              group.day === ui.currentDay
+                                ? "var(--brand-soft)"
+                                : "var(--bg-subtle)",
+                            color:
+                              group.day === ui.currentDay
+                                ? "var(--text-primary)"
+                                : "var(--text-secondary)",
                             fontWeight: group.day === ui.currentDay ? 600 : 400,
                           }}
                         >
@@ -386,11 +396,16 @@ export function SchedulePage() {
                             item.toLowerCase().includes("ноутбук"),
                           );
                           const isChecked = event.attendance === "confirmed";
-                          const eventMaterials = materials.filter((material) => material.eventId === event.id);
-                          const eventResources = resources.filter((resource) => resource.eventId === event.id);
+                          const eventMaterials = materials.filter(
+                            (material) => material.eventId === event.id,
+                          );
+                          const eventResources = resources.filter(
+                            (resource) => resource.eventId === event.id,
+                          );
                           const canEditEvent =
                             currentUser.capabilities.canEditAllEvents ||
-                            (currentUser.capabilities.canEditOwnEvents && event.teacherIds.includes(currentUser.id));
+                            (currentUser.capabilities.canEditOwnEvents &&
+                              event.teacherIds.includes(currentUser.id));
                           const dotColor =
                             event.status === "in_progress"
                               ? "var(--success)"
@@ -408,7 +423,10 @@ export function SchedulePage() {
                             <div key={event.id} className="relative pl-[52px]">
                               <div
                                 className={`absolute left-[20px] top-4 w-[12px] h-[12px] rounded-full ${event.status === "in_progress" ? "animate-pulse" : ""}`}
-                                style={{ backgroundColor: dotColor, border: "2px solid var(--bg-card)" }}
+                                style={{
+                                  backgroundColor: dotColor,
+                                  border: "2px solid var(--bg-card)",
+                                }}
                               />
                               <SurfaceCard
                                 onClick={() => setExpanded(isExpanded ? null : event.id)}
@@ -416,7 +434,10 @@ export function SchedulePage() {
                               >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                                    <span
+                                      className="text-[13px]"
+                                      style={{ color: "var(--text-secondary)" }}
+                                    >
                                       {event.startAt}–{event.endAt}
                                     </span>
                                     <AttendanceBadge
@@ -428,48 +449,69 @@ export function SchedulePage() {
                                     {hasLaptop && (
                                       <span
                                         className="flex items-center gap-1 text-[12px] px-2 py-0.5 rounded-[var(--radius-sm)]"
-                                        style={{ background: "var(--info-soft)", color: "var(--info)" }}
+                                        style={{
+                                          background: "var(--info-soft)",
+                                          color: "var(--info)",
+                                        }}
                                       >
                                         <Laptop size={12} /> Ноутбук
                                       </span>
                                     )}
                                   </div>
                                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                                    {teacher && (
-                                      event.teacherIds[0] ? (
+                                    {teacher &&
+                                      (event.teacherIds[0] ? (
                                         <button
                                           type="button"
                                           onClick={(clickEvent) => {
                                             clickEvent.stopPropagation();
-                                            navigate(`/people?user=${event.teacherIds[0]}`);
+                                            void navigate(`/people?user=${event.teacherIds[0]}`);
                                           }}
                                           className="text-[12px] px-2.5 py-1 rounded-full transition-colors hover:bg-[var(--line-subtle)]"
-                                          style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
+                                          style={{
+                                            background: "var(--bg-subtle)",
+                                            color: "var(--text-secondary)",
+                                            fontWeight: 500,
+                                          }}
                                         >
                                           {teacher}
                                         </button>
                                       ) : (
                                         <span
                                           className="text-[12px] px-2.5 py-1 rounded-full"
-                                          style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 500 }}
+                                          style={{
+                                            background: "var(--bg-subtle)",
+                                            color: "var(--text-secondary)",
+                                            fontWeight: 500,
+                                          }}
                                         >
                                           {teacher}
                                         </span>
-                                      )
-                                    )}
+                                      ))}
                                     {event.status === "in_progress" && (
                                       <span
                                         className="text-[12px] px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                                        style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
+                                        style={{
+                                          background: "var(--success-soft)",
+                                          color: "var(--success)",
+                                          fontWeight: 600,
+                                        }}
                                       >
-                                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--success)" }} />
+                                        <span
+                                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                          style={{ background: "var(--success)" }}
+                                        />
                                         Идёт сейчас
                                       </span>
                                     )}
                                     {event.status === "changed" && (
                                       <span
                                         className="text-[12px] px-2.5 py-1 rounded-full"
-                                        style={{ background: "var(--warning-soft)", color: "var(--warning)", fontWeight: 600 }}
+                                        style={{
+                                          background: "var(--warning-soft)",
+                                          color: "var(--warning)",
+                                          fontWeight: 600,
+                                        }}
                                       >
                                         Изменено
                                       </span>
@@ -477,7 +519,11 @@ export function SchedulePage() {
                                     {event.status === "cancelled" && (
                                       <span
                                         className="text-[12px] px-2.5 py-1 rounded-full"
-                                        style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}
+                                        style={{
+                                          background: "var(--danger-soft)",
+                                          color: "var(--danger)",
+                                          fontWeight: 600,
+                                        }}
                                       >
                                         Отменено
                                       </span>
@@ -490,17 +536,29 @@ export function SchedulePage() {
                                           onClick={(clickEvent) => {
                                             clickEvent.preventDefault();
                                             clickEvent.stopPropagation();
-                                            setAdminState({ kind: "event", mode: "edit", entity: event });
+                                            setAdminState({
+                                              kind: "event",
+                                              mode: "edit",
+                                              entity: event,
+                                            });
                                           }}
                                         />
                                         {currentUser.capabilities.canManageAll && (
                                           <ActionIconButton
                                             kind={event.isHidden ? "show" : "hide"}
-                                            label={event.isHidden ? "Показать участникам" : "Скрыть от участников"}
+                                            label={
+                                              event.isHidden
+                                                ? "Показать участникам"
+                                                : "Скрыть от участников"
+                                            }
                                             onClick={(clickEvent) => {
                                               clickEvent.preventDefault();
                                               clickEvent.stopPropagation();
-                                              void setEntityVisibility("events", event.id, !event.isHidden);
+                                              void setEntityVisibility(
+                                                "events",
+                                                event.id,
+                                                !event.isHidden,
+                                              );
                                             }}
                                           />
                                         )}
@@ -510,7 +568,9 @@ export function SchedulePage() {
                                           onClick={(clickEvent) => {
                                             clickEvent.preventDefault();
                                             clickEvent.stopPropagation();
-                                            if (window.confirm(`Удалить занятие «${event.title}»?`)) {
+                                            if (
+                                              window.confirm(`Удалить занятие «${event.title}»?`)
+                                            ) {
                                               void deleteAdminEntity("events", event.id);
                                             }
                                           }}
@@ -524,7 +584,9 @@ export function SchedulePage() {
                                   className={`text-[16px] mb-1 ${event.status === "cancelled" ? "line-through" : ""}`}
                                   style={{
                                     color:
-                                      event.status === "cancelled" ? "var(--text-tertiary)" : "var(--text-primary)",
+                                      event.status === "cancelled"
+                                        ? "var(--text-tertiary)"
+                                        : "var(--text-primary)",
                                     fontWeight: 500,
                                   }}
                                 >
@@ -541,192 +603,228 @@ export function SchedulePage() {
                                   <button
                                     onClick={(evt) => {
                                       evt.stopPropagation();
-                                      navigate(`/materials?event=${event.id}`);
+                                      void navigate(`/materials?event=${event.id}`);
                                     }}
                                     className="mt-2 inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
-                                    style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
+                                    style={{
+                                      background: "var(--bg-subtle)",
+                                      color: "var(--text-secondary)",
+                                    }}
                                   >
                                     <FolderOpen size={12} />
                                     Материалы ({eventMaterials.length})
                                   </button>
                                 )}
 
-                                {isExpanded && (() => {
-                                  const attachments = [
-                                    ...eventMaterials.map((item) => ({ kind: "material" as const, item })),
-                                    ...eventResources.map((item) => ({ kind: "resource" as const, item })),
-                                  ];
-                                  const routeQuery = event.address || event.building || event.place;
-                                  const routeLabel =
-                                    event.address || event.building || event.place || "Открыть в картах";
-                                  const trimmedDescription = (event.description ?? "").trim();
-                                  const showDescription =
-                                    Boolean(trimmedDescription) && trimmedDescription !== group.theme;
+                                {isExpanded &&
+                                  (() => {
+                                    const attachments = [
+                                      ...eventMaterials.map((item) => ({
+                                        kind: "material" as const,
+                                        item,
+                                      })),
+                                      ...eventResources.map((item) => ({
+                                        kind: "resource" as const,
+                                        item,
+                                      })),
+                                    ];
+                                    const routeQuery =
+                                      event.address || event.building || event.place;
+                                    const routeLabel =
+                                      event.address ||
+                                      event.building ||
+                                      event.place ||
+                                      "Открыть в картах";
+                                    const trimmedDescription = (event.description ?? "").trim();
+                                    const showDescription =
+                                      Boolean(trimmedDescription) &&
+                                      trimmedDescription !== group.theme;
 
-                                  return (
-                                    <div
-                                      className="mt-3 pt-3 border-t"
-                                      style={{ borderColor: "var(--line-subtle)" }}
-                                      onClick={(evt) => evt.stopPropagation()}
-                                    >
-                                      {showDescription && (
-                                        <p className="text-[14px] mb-3" style={{ color: "var(--text-secondary)" }}>
-                                          {trimmedDescription}
-                                        </p>
-                                      )}
-
-                                      {hasLaptop && (
-                                        <div
-                                          className="rounded-[var(--radius-md)] p-3 mb-3 flex items-center gap-2.5"
-                                          style={{ background: "var(--info-soft)" }}
-                                        >
-                                          <Laptop size={15} style={{ color: "var(--info)" }} />
-                                          <p className="text-[13px]" style={{ color: "var(--info)" }}>
-                                            Возьмите ноутбук с зарядкой
+                                    return (
+                                      <div
+                                        className="mt-3 pt-3 border-t"
+                                        style={{ borderColor: "var(--line-subtle)" }}
+                                        onClick={(evt) => evt.stopPropagation()}
+                                      >
+                                        {showDescription && (
+                                          <p
+                                            className="text-[14px] mb-3"
+                                            style={{ color: "var(--text-secondary)" }}
+                                          >
+                                            {trimmedDescription}
                                           </p>
-                                        </div>
-                                      )}
+                                        )}
 
-                                      {event.materials && event.materials.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 mb-3">
-                                          {event.materials.map((material) => (
-                                            <span
-                                              key={material}
-                                              className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
-                                              style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
+                                        {hasLaptop && (
+                                          <div
+                                            className="rounded-[var(--radius-md)] p-3 mb-3 flex items-center gap-2.5"
+                                            style={{ background: "var(--info-soft)" }}
+                                          >
+                                            <Laptop size={15} style={{ color: "var(--info)" }} />
+                                            <p
+                                              className="text-[13px]"
+                                              style={{ color: "var(--info)" }}
                                             >
-                                              {material}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
+                                              Возьмите ноутбук с зарядкой
+                                            </p>
+                                          </div>
+                                        )}
 
-                                      {attachments.length > 0 && (
-                                        <div className="mb-3 space-y-2">
-                                          {attachments.map(({ kind, item }) => {
-                                            const isMaterial = kind === "material";
-                                            const accent = isMaterial
-                                              ? MATERIAL_TYPE_ACCENT[item.type] ?? "var(--text-secondary)"
-                                              : "var(--info)";
-                                            const TypeIcon = isMaterial
-                                              ? (ATTACHMENT_ICONS[item.type] ?? File)
-                                              : Link2;
-                                            const metaText = isMaterial
-                                              ? [
-                                                  MATERIAL_TYPE_LABELS[item.type] ?? item.type,
-                                                  item.fileSize,
-                                                ]
-                                                  .filter(Boolean)
-                                                  .join(" · ")
-                                              : RESOURCE_KIND_LABELS[item.kind] ?? item.kind;
-
-                                            return (
-                                              <div
-                                                key={`${kind}-${item.id}`}
-                                                className="flex items-center gap-3 p-2.5 rounded-[var(--radius-md)] border transition-colors hover:bg-[var(--bg-subtle)]"
+                                        {event.materials && event.materials.length > 0 && (
+                                          <div className="flex flex-wrap gap-1.5 mb-3">
+                                            {event.materials.map((material) => (
+                                              <span
+                                                key={material}
+                                                className="text-[12px] px-2.5 py-1 rounded-[var(--radius-sm)]"
                                                 style={{
-                                                  background: "var(--bg-card)",
-                                                  borderColor: "var(--line-subtle)",
+                                                  background: "var(--bg-subtle)",
+                                                  color: "var(--text-secondary)",
                                                 }}
                                               >
+                                                {material}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        {attachments.length > 0 && (
+                                          <div className="mb-3 space-y-2">
+                                            {attachments.map(({ kind, item }) => {
+                                              const isMaterial = kind === "material";
+                                              const accent = isMaterial
+                                                ? (MATERIAL_TYPE_ACCENT[item.type] ??
+                                                  "var(--text-secondary)")
+                                                : "var(--info)";
+                                              const TypeIcon = isMaterial
+                                                ? (ATTACHMENT_ICONS[item.type] ?? File)
+                                                : Link2;
+                                              const metaText = isMaterial
+                                                ? [
+                                                    MATERIAL_TYPE_LABELS[item.type] ?? item.type,
+                                                    item.fileSize,
+                                                  ]
+                                                    .filter(Boolean)
+                                                    .join(" · ")
+                                                : (RESOURCE_KIND_LABELS[item.kind] ?? item.kind);
+
+                                              return (
                                                 <div
-                                                  className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-                                                  style={
-                                                    {
+                                                  key={`${kind}-${item.id}`}
+                                                  className="flex items-center gap-3 p-2.5 rounded-[var(--radius-md)] border transition-colors hover:bg-[var(--bg-subtle)]"
+                                                  style={{
+                                                    background: "var(--bg-card)",
+                                                    borderColor: "var(--line-subtle)",
+                                                  }}
+                                                >
+                                                  <div
+                                                    className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+                                                    style={{
                                                       background: `color-mix(in srgb, ${accent} 14%, transparent)`,
                                                       color: accent,
-                                                    } as CSSProperties
-                                                  }
-                                                >
-                                                  <TypeIcon size={16} />
+                                                    }}
+                                                  >
+                                                    <TypeIcon size={16} />
+                                                  </div>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => openExternal(item.url)}
+                                                    className="flex-1 min-w-0 text-left"
+                                                  >
+                                                    <p
+                                                      className="text-[13.5px] leading-snug truncate"
+                                                      style={{
+                                                        color: "var(--text-primary)",
+                                                        fontWeight: 500,
+                                                      }}
+                                                    >
+                                                      {item.title}
+                                                    </p>
+                                                    <p
+                                                      className="text-[11.5px] mt-0.5 truncate"
+                                                      style={{ color: "var(--text-tertiary)" }}
+                                                    >
+                                                      {metaText}
+                                                    </p>
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => openExternal(item.url)}
+                                                    aria-label={
+                                                      isMaterial ? "Скачать" : "Открыть ссылку"
+                                                    }
+                                                    className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center transition-colors hover:bg-[var(--bg-card)] shrink-0"
+                                                    style={{ color: "var(--info)" }}
+                                                  >
+                                                    {isMaterial ? (
+                                                      <Download size={15} />
+                                                    ) : (
+                                                      <ExternalLink size={15} />
+                                                    )}
+                                                  </button>
                                                 </div>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => openExternal(item.url)}
-                                                  className="flex-1 min-w-0 text-left"
-                                                >
-                                                  <p
-                                                    className="text-[13.5px] leading-snug truncate"
-                                                    style={{ color: "var(--text-primary)", fontWeight: 500 }}
-                                                  >
-                                                    {item.title}
-                                                  </p>
-                                                  <p
-                                                    className="text-[11.5px] mt-0.5 truncate"
-                                                    style={{ color: "var(--text-tertiary)" }}
-                                                  >
-                                                    {metaText}
-                                                  </p>
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => openExternal(item.url)}
-                                                  aria-label={isMaterial ? "Скачать" : "Открыть ссылку"}
-                                                  className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center transition-colors hover:bg-[var(--bg-card)] shrink-0"
-                                                  style={{ color: "var(--info)" }}
-                                                >
-                                                  {isMaterial ? <Download size={15} /> : <ExternalLink size={15} />}
-                                                </button>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      )}
+                                              );
+                                            })}
+                                          </div>
+                                        )}
 
-                                      {routeQuery && (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            openExternal(
-                                              `https://yandex.ru/maps/?text=${encodeURIComponent(routeQuery)}`,
-                                            )
-                                          }
-                                          className="w-full flex items-center gap-2 py-1 mb-2 text-left transition-colors hover:underline"
-                                        >
-                                          <Navigation
-                                            size={14}
-                                            style={{ color: "var(--text-tertiary)" }}
-                                            className="shrink-0"
-                                          />
-                                          <span
-                                            className="text-[14px] truncate flex-1"
-                                            style={{ color: "var(--text-primary)" }}
-                                          >
-                                            {routeLabel}
-                                          </span>
-                                          <ExternalLink
-                                            size={13}
-                                            style={{ color: "var(--text-tertiary)" }}
-                                            className="shrink-0"
-                                          />
-                                        </button>
-                                      )}
-
-                                      {event.status === "in_progress" && (
-                                        <div className="flex justify-end">
+                                        {routeQuery && (
                                           <button
                                             type="button"
-                                            onClick={() => void checkInEvent(event.id)}
-                                            className="flex items-center gap-1.5 text-[13px] px-4 py-2 rounded-[var(--radius-md)]"
-                                            style={{
-                                              background: isChecked ? "var(--success-soft)" : "var(--text-primary)",
-                                              color: isChecked ? "var(--success)" : "var(--text-inverted)",
-                                              fontWeight: 500,
-                                            }}
+                                            onClick={() =>
+                                              openExternal(
+                                                `https://yandex.ru/maps/?text=${encodeURIComponent(routeQuery)}`,
+                                              )
+                                            }
+                                            className="w-full flex items-center gap-2 py-1 mb-2 text-left transition-colors hover:underline"
                                           >
-                                            {isChecked ? (
-                                              <>
-                                                <Check size={13} /> Отмечено
-                                              </>
-                                            ) : (
-                                              "Я здесь"
-                                            )}
+                                            <Navigation
+                                              size={14}
+                                              style={{ color: "var(--text-tertiary)" }}
+                                              className="shrink-0"
+                                            />
+                                            <span
+                                              className="text-[14px] truncate flex-1"
+                                              style={{ color: "var(--text-primary)" }}
+                                            >
+                                              {routeLabel}
+                                            </span>
+                                            <ExternalLink
+                                              size={13}
+                                              style={{ color: "var(--text-tertiary)" }}
+                                              className="shrink-0"
+                                            />
                                           </button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
+                                        )}
+
+                                        {event.status === "in_progress" && (
+                                          <div className="flex justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={() => void checkInEvent(event.id)}
+                                              className="flex items-center gap-1.5 text-[13px] px-4 py-2 rounded-[var(--radius-md)]"
+                                              style={{
+                                                background: isChecked
+                                                  ? "var(--success-soft)"
+                                                  : "var(--text-primary)",
+                                                color: isChecked
+                                                  ? "var(--success)"
+                                                  : "var(--text-inverted)",
+                                                fontWeight: 500,
+                                              }}
+                                            >
+                                              {isChecked ? (
+                                                <>
+                                                  <Check size={13} /> Отмечено
+                                                </>
+                                              ) : (
+                                                "Я здесь"
+                                              )}
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                               </SurfaceCard>
                             </div>
                           );
@@ -844,7 +942,11 @@ export function SchedulePage() {
               await createAdminEntity(resource, normalizedPayload);
               return;
             }
-            await updateAdminEntity(resource, (adminState.entity as { id: string }).id, normalizedPayload);
+            await updateAdminEntity(
+              resource,
+              (adminState.entity as { id: string }).id,
+              normalizedPayload,
+            );
           }}
         />
       </PageShell>

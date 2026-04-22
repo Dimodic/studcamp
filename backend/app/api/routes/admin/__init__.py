@@ -17,7 +17,6 @@ from . import (
     visibility,
 )
 
-
 router = APIRouter()
 router.include_router(stories.router)
 router.include_router(updates.router)

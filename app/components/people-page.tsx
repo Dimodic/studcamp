@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ExternalLink, House, Mail, Search, X } from "lucide-react";
 import { Avatar, EmptyState, PageShell } from "./common";
@@ -80,7 +80,10 @@ function PersonRow({ person, onClick, onEdit, onDelete }: PersonRowProps) {
     >
       <Avatar name={person.name} size={44} />
       <div className="flex-1 min-w-0">
-        <p className="text-[14.5px] leading-snug truncate" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+        <p
+          className="text-[14.5px] leading-snug truncate"
+          style={{ color: "var(--text-primary)", fontWeight: 500 }}
+        >
           {person.name}
         </p>
         {meta ? (
@@ -130,7 +133,8 @@ function PersonRow({ person, onClick, onEdit, onDelete }: PersonRowProps) {
 export function PeoplePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setProjectAssignment } = useAppData();
+  const { data, createAdminEntity, updateAdminEntity, deleteAdminEntity, setProjectAssignment } =
+    useAppData();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [selectedPerson, setSelectedPerson] = useState<Person | AdminUser | null>(null);
@@ -144,13 +148,17 @@ export function PeoplePage() {
 
   const selectedDocs = useMemo(
     () =>
-      data && selectedPerson ? data.adminDocuments.filter((document) => document.userId === selectedPerson.id) : [],
+      data && selectedPerson
+        ? data.adminDocuments.filter((document) => document.userId === selectedPerson.id)
+        : [],
     [data, selectedPerson],
   );
   const selectedRoomAssignment = useMemo(
     () =>
       data && selectedPerson
-        ? data.adminRoomAssignments.find((assignment) => assignment.userId === selectedPerson.id) ?? null
+        ? (data.adminRoomAssignments.find(
+            (assignment) => assignment.userId === selectedPerson.id,
+          ) ?? null)
         : null,
     [data, selectedPerson],
   );
@@ -171,9 +179,12 @@ export function PeoplePage() {
   useEffect(() => {
     if (!data) return;
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get("admin") === "create-user" && data.currentUser.capabilities.canManageUsers) {
+    if (
+      searchParams.get("admin") === "create-user" &&
+      data.currentUser.capabilities.canManageUsers
+    ) {
       setAdminState({ kind: "user", mode: "create" });
-      navigate("/people", { replace: true });
+      void navigate("/people", { replace: true });
     }
     const userId = searchParams.get("user");
     if (userId) {
@@ -184,13 +195,16 @@ export function PeoplePage() {
       if (target) {
         setSelectedPerson(target);
       }
-      navigate("/people", { replace: true });
+      void navigate("/people", { replace: true });
     }
   }, [data, location.search, navigate]);
 
-  if (!data) return null;
-
-  const sourcePeople = data.currentUser.capabilities.canManageUsers ? data.adminUsers : data.people;
+  // ── Derived state — считаем до ранних return, чтобы хуки были стабильны.
+  const sourcePeople = data
+    ? data.currentUser.capabilities.canManageUsers
+      ? data.adminUsers
+      : data.people
+    : [];
   const counts = useMemo(() => {
     const result = { all: sourcePeople.length, participant: 0, teacher: 0, organizer: 0 };
     for (const person of sourcePeople) {
@@ -217,6 +231,8 @@ export function PeoplePage() {
       });
     return list;
   }, [sourcePeople, roleFilter, search]);
+
+  if (!data) return null;
 
   const userOptions = data.adminUsers.map((user) => ({ id: user.id, label: user.name }));
 
@@ -288,7 +304,9 @@ export function PeoplePage() {
 
       <div className="px-5 pb-8 space-y-2">
         {filtered.length === 0 ? (
-          <EmptyState text={search ? `Никого не найдено по запросу «${search}»` : "Пока никого не добавили"} />
+          <EmptyState
+            text={search ? `Никого не найдено по запросу «${search}»` : "Пока никого не добавили"}
+          />
         ) : (
           filtered.map((person) => (
             <PersonRow
@@ -333,7 +351,11 @@ export function PeoplePage() {
           }
           onDeleteRoom={() => void deleteAdminEntity("room-assignments", selectedPerson.id)}
           onCreateDocument={() =>
-            setAdminState({ kind: "document", mode: "create", defaults: { userId: selectedPerson.id } })
+            setAdminState({
+              kind: "document",
+              mode: "create",
+              defaults: { userId: selectedPerson.id },
+            })
           }
           onEditDocument={(document) =>
             setAdminState({ kind: "document", mode: "edit", entity: document })
@@ -428,12 +450,21 @@ function PersonDetailsSheet({
         style={{ background: "var(--bg-card)", boxShadow: "var(--shadow-floating)" }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="sm:hidden w-10 h-1 rounded-full mx-auto mt-3" style={{ background: "var(--line-strong)" }} />
+        <div
+          className="sm:hidden w-10 h-1 rounded-full mx-auto mt-3"
+          style={{ background: "var(--line-strong)" }}
+        />
 
-        <div className="px-6 pt-5 pb-5 flex items-start gap-4 border-b" style={{ borderColor: "var(--line-subtle)" }}>
+        <div
+          className="px-6 pt-5 pb-5 flex items-start gap-4 border-b"
+          style={{ borderColor: "var(--line-subtle)" }}
+        >
           <Avatar name={person.name} size={68} />
           <div className="flex-1 min-w-0">
-            <h2 className="text-[20px] leading-tight mb-1" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+            <h2
+              className="text-[20px] leading-tight mb-1"
+              style={{ color: "var(--text-primary)", fontWeight: 600 }}
+            >
               {person.name}
             </h2>
             <span
@@ -482,18 +513,22 @@ function PersonDetailsSheet({
           {hasDetails ? (
             <dl
               className="grid gap-3 text-[14px]"
-              style={{ gridTemplateColumns: "max-content 1fr" } as CSSProperties}
+              style={{ gridTemplateColumns: "max-content 1fr" }}
             >
               {person.university && (
                 <>
                   <dt style={{ color: "var(--text-tertiary)" }}>ВУЗ</dt>
-                  <dd className="m-0" style={{ color: "var(--text-primary)" }}>{person.university}</dd>
+                  <dd className="m-0" style={{ color: "var(--text-primary)" }}>
+                    {person.university}
+                  </dd>
                 </>
               )}
               {person.city && (
                 <>
                   <dt style={{ color: "var(--text-tertiary)" }}>Город</dt>
-                  <dd className="m-0" style={{ color: "var(--text-primary)" }}>{person.city}</dd>
+                  <dd className="m-0" style={{ color: "var(--text-primary)" }}>
+                    {person.city}
+                  </dd>
                 </>
               )}
               {person.telegram && (
@@ -520,7 +555,10 @@ function PersonDetailsSheet({
               {"email" in person && person.email && (
                 <>
                   <dt style={{ color: "var(--text-tertiary)" }}>Email</dt>
-                  <dd className="m-0 flex items-center gap-1" style={{ color: "var(--text-primary)" }}>
+                  <dd
+                    className="m-0 flex items-center gap-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     <Mail size={13} style={{ color: "var(--text-tertiary)" }} />
                     {person.email}
                   </dd>
@@ -529,7 +567,10 @@ function PersonDetailsSheet({
               {"isActive" in person && (
                 <>
                   <dt style={{ color: "var(--text-tertiary)" }}>Активен</dt>
-                  <dd className="m-0" style={{ color: person.isActive ? "var(--success)" : "var(--text-tertiary)" }}>
+                  <dd
+                    className="m-0"
+                    style={{ color: person.isActive ? "var(--success)" : "var(--text-tertiary)" }}
+                  >
                     {person.isActive ? "Да" : "Нет"}
                   </dd>
                 </>
@@ -556,7 +597,11 @@ function PersonDetailsSheet({
                   onAssignTeam(value === "" ? null : value);
                 }}
                 className="w-full rounded-[var(--radius-md)] border px-3 py-2.5 text-[14px] outline-none"
-                style={{ borderColor: "var(--line-subtle)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--line-subtle)",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               >
                 <option value="">— не назначен —</option>
                 {teamOptions.map((option) => (
@@ -613,7 +658,10 @@ function PersonDetailsSheet({
                       <House size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                      <p
+                        className="text-[14px]"
+                        style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                      >
                         Комната {roomAssignment.number}, этаж {roomAssignment.floor}
                       </p>
                       <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -658,10 +706,16 @@ function PersonDetailsSheet({
                         style={{ background: "var(--bg-card)", borderColor: "var(--line-subtle)" }}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-[14px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                          <p
+                            className="text-[14px]"
+                            style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                          >
                             {document.title}
                           </p>
-                          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+                          <p
+                            className="text-[12px] mt-0.5"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
                             {document.status}
                           </p>
                         </div>

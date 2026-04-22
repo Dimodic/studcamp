@@ -1,6 +1,7 @@
 import type { AdminResourcePath, BootstrapPayload, LoginResponse, VisibilityMode } from "./domain";
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000/api/v1";
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000/api/v1";
 
 function formatApiErrorDetail(detail: unknown): string | null {
   if (detail == null) {
@@ -39,11 +40,18 @@ function formatApiErrorDetail(detail: unknown): string | null {
     try {
       return JSON.stringify(detail);
     } catch {
-      return String(detail);
+      return "Неизвестная ошибка";
     }
   }
 
-  return String(detail);
+  return typeof detail === "number" || typeof detail === "boolean" ? String(detail) : null;
+}
+
+function pickErrorField(body: unknown, key: "detail" | "message" | "error"): unknown {
+  if (body && typeof body === "object" && key in body) {
+    return (body as Record<string, unknown>)[key];
+  }
+  return undefined;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -58,10 +66,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(
-      formatApiErrorDetail(body.detail ?? body.message ?? body.error) ?? "Не удалось выполнить запрос",
-    );
+    const body: unknown = await response.json().catch(() => ({}));
+    const detail =
+      pickErrorField(body, "detail") ??
+      pickErrorField(body, "message") ??
+      pickErrorField(body, "error");
+    throw new Error(formatApiErrorDetail(detail) ?? "Не удалось выполнить запрос");
   }
 
   if (response.status === 204) {
@@ -152,7 +162,12 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
-  updateAdminEntity(token: string, resource: AdminResourcePath, entityId: string, payload: unknown) {
+  updateAdminEntity(
+    token: string,
+    resource: AdminResourcePath,
+    entityId: string,
+    payload: unknown,
+  ) {
     return request<{ ok: boolean }>(`/admin/${resource}/${entityId}`, {
       method: "PATCH",
       headers: {
@@ -179,13 +194,16 @@ export const api = {
       attachments: Array<{ name: string; mimeType: string; base64: string }>;
     },
   ) {
-    return request<{ items: Array<{ kind: string; payload: Record<string, unknown> }> }>(`/llm/parse`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
+    return request<{ items: Array<{ kind: string; payload: Record<string, unknown> }> }>(
+      `/llm/parse`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
   },
   parseAttendancePhoto(
     token: string,
@@ -269,14 +287,11 @@ export const api = {
     });
   },
   autoDistributeAssignments(token: string) {
-    return request<{ assigned: number; unassigned: string[] }>(
-      `/admin/project-assignments/auto`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    return request<{ assigned: number; unassigned: string[] }>(`/admin/project-assignments/auto`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
   },
 };

@@ -13,7 +13,10 @@ export function PageHeader({ title, onBack, right }: PageHeaderProps) {
   return (
     <div className="px-5 pt-5 pb-3 flex items-center gap-3">
       {onBack !== undefined && (
-        <button onClick={onBack ?? (() => navigate(-1))} className="text-[var(--text-secondary)] -ml-1 p-1">
+        <button
+          onClick={onBack ?? (() => navigate(-1))}
+          className="text-[var(--text-secondary)] -ml-1 p-1"
+        >
           <ArrowLeft size={22} />
         </button>
       )}

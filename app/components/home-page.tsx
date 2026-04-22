@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
@@ -138,7 +138,8 @@ export function HomePage() {
             className="text-[13px] mb-1 flex items-center gap-1.5"
             style={{ color: "var(--text-tertiary)" }}
           >
-            <CalendarDays size={14} /> День {data.ui.currentDay} из {data.ui.totalDays} · Яндекс Образование
+            <CalendarDays size={14} /> День {data.ui.currentDay} из {data.ui.totalDays} · Яндекс
+            Образование
           </p>
           <div className="flex items-center gap-2">
             <h1 className="text-[var(--text-primary)]">{camp.name}</h1>
@@ -270,7 +271,11 @@ export function HomePage() {
                 {nextEvent.status === "in_progress" ? (
                   <span
                     className="text-[12px] px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                    style={{ background: "var(--success-soft)", color: "var(--success)", fontWeight: 600 }}
+                    style={{
+                      background: "var(--success-soft)",
+                      color: "var(--success)",
+                      fontWeight: 600,
+                    }}
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full animate-pulse"
@@ -281,7 +286,11 @@ export function HomePage() {
                 ) : (
                   <span
                     className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full"
-                    style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 600 }}
+                    style={{
+                      background: "var(--bg-subtle)",
+                      color: "var(--text-secondary)",
+                      fontWeight: 600,
+                    }}
                   >
                     Следующее
                   </span>
@@ -299,10 +308,7 @@ export function HomePage() {
                       {nextTitle}
                     </h2>
                     {nextTeacher && (
-                      <p
-                        className="text-[13.5px] mb-3"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
+                      <p className="text-[13.5px] mb-3" style={{ color: "var(--text-secondary)" }}>
                         {nextTeacher}
                       </p>
                     )}
@@ -333,9 +339,15 @@ export function HomePage() {
                     className="rounded-[var(--radius-md)] p-3.5 mb-4 flex items-start gap-2.5 text-[13.5px] leading-relaxed"
                     style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
                   >
-                    <MapPin size={15} className="shrink-0 mt-0.5" style={{ color: "var(--text-tertiary)" }} />
+                    <MapPin
+                      size={15}
+                      className="shrink-0 mt-0.5"
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
                     <div className="min-w-0">
-                      <p style={{ color: "var(--text-primary)", fontWeight: 500 }}>{uniqueParts[0]}</p>
+                      <p style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                        {uniqueParts[0]}
+                      </p>
                       {uniqueParts.slice(1).map((part, index) => (
                         <p key={index} className="mt-0.5">
                           {part}
@@ -350,7 +362,11 @@ export function HomePage() {
                 <button
                   onClick={() => openRoute(nextEvent.address, nextEvent.place)}
                   className="flex-1 min-w-[140px] py-2.5 rounded-[var(--radius-md)] text-[14px] flex items-center justify-center gap-2 transition-colors hover:bg-[var(--brand-hover)]"
-                  style={{ background: "var(--brand)", color: "var(--brand-contrast)", fontWeight: 600 }}
+                  style={{
+                    background: "var(--brand)",
+                    color: "var(--brand-contrast)",
+                    fontWeight: 600,
+                  }}
                 >
                   <Navigation size={15} /> Маршрут
                 </button>
@@ -378,11 +394,18 @@ export function HomePage() {
             >
               <span
                 className="text-[10.5px] uppercase tracking-wider shrink-0 px-2 py-0.5 rounded-full"
-                style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)", fontWeight: 600 }}
+                style={{
+                  background: "var(--bg-subtle)",
+                  color: "var(--text-secondary)",
+                  fontWeight: 600,
+                }}
               >
                 Дальше
               </span>
-              <span className="text-[13px] shrink-0 tabular-nums" style={{ color: "var(--text-secondary)" }}>
+              <span
+                className="text-[13px] shrink-0 tabular-nums"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {upcomingAfterCurrent.startAt}
               </span>
               <span
@@ -391,7 +414,11 @@ export function HomePage() {
               >
                 {splitEventTitle(upcomingAfterCurrent.title).title}
               </span>
-              <ChevronRight size={16} style={{ color: "var(--text-tertiary)" }} className="shrink-0" />
+              <ChevronRight
+                size={16}
+                style={{ color: "var(--text-tertiary)" }}
+                className="shrink-0"
+              />
             </button>
           )}
 
@@ -403,17 +430,18 @@ export function HomePage() {
             >
               <div
                 className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                style={
-                  {
-                    background: "color-mix(in srgb, var(--danger) 14%, transparent)",
-                    color: "var(--danger)",
-                  } as CSSProperties
-                }
+                style={{
+                  background: "color-mix(in srgb, var(--danger) 14%, transparent)",
+                  color: "var(--danger)",
+                }}
               >
                 <FileText size={19} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14.5px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                <p
+                  className="text-[14.5px]"
+                  style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                >
                   {nearestDeadline.title}
                 </p>
                 <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -432,7 +460,11 @@ export function HomePage() {
                   дедлайн
                 </p>
               </div>
-              <ChevronRight size={16} style={{ color: "var(--text-tertiary)" }} className="shrink-0" />
+              <ChevronRight
+                size={16}
+                style={{ color: "var(--text-tertiary)" }}
+                className="shrink-0"
+              />
             </button>
           )}
 
@@ -492,7 +524,9 @@ export function HomePage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className="text-[12.5px]"
-                            style={{ color: isDone ? "var(--text-tertiary)" : "var(--text-secondary)" }}
+                            style={{
+                              color: isDone ? "var(--text-tertiary)" : "var(--text-secondary)",
+                            }}
                           >
                             {event.startAt}–{event.endAt}
                           </span>
@@ -508,25 +542,43 @@ export function HomePage() {
                               Сейчас
                             </span>
                           )}
-                          {currentUser.role === "participant" && isCountableEvent(event) && (() => {
-                            const st = event.attendance === "confirmed"
-                              ? { bg: "var(--success-soft)", color: "var(--success)", Icon: Check, tip: "Посещение отмечено" }
-                              : event.status === "completed"
-                                ? { bg: "var(--danger-soft)", color: "var(--danger)", Icon: X as LucideIcon, tip: "Занятие пропущено" }
-                                : null;
-                            if (!st) return null;
-                            const Ico = st.Icon;
-                            return (
-                              <span
-                                aria-label={st.tip}
-                                title={st.tip}
-                                className="inline-flex items-center justify-center rounded-full shrink-0"
-                                style={{ width: 20, height: 20, background: st.bg, color: st.color }}
-                              >
-                                <Ico size={11} strokeWidth={2.4} />
-                              </span>
-                            );
-                          })()}
+                          {currentUser.role === "participant" &&
+                            isCountableEvent(event) &&
+                            (() => {
+                              const st =
+                                event.attendance === "confirmed"
+                                  ? {
+                                      bg: "var(--success-soft)",
+                                      color: "var(--success)",
+                                      Icon: Check,
+                                      tip: "Посещение отмечено",
+                                    }
+                                  : event.status === "completed"
+                                    ? {
+                                        bg: "var(--danger-soft)",
+                                        color: "var(--danger)",
+                                        Icon: X as LucideIcon,
+                                        tip: "Занятие пропущено",
+                                      }
+                                    : null;
+                              if (!st) return null;
+                              const Ico = st.Icon;
+                              return (
+                                <span
+                                  aria-label={st.tip}
+                                  title={st.tip}
+                                  className="inline-flex items-center justify-center rounded-full shrink-0"
+                                  style={{
+                                    width: 20,
+                                    height: 20,
+                                    background: st.bg,
+                                    color: st.color,
+                                  }}
+                                >
+                                  <Ico size={11} strokeWidth={2.4} />
+                                </span>
+                              );
+                            })()}
                         </div>
                         <p
                           className="text-[14.5px] mt-0.5 leading-snug"
@@ -539,7 +591,9 @@ export function HomePage() {
                         </p>
                         <div
                           className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] mt-0.5"
-                          style={{ color: isDone ? "var(--text-tertiary)" : "var(--text-secondary)" }}
+                          style={{
+                            color: isDone ? "var(--text-tertiary)" : "var(--text-secondary)",
+                          }}
                         >
                           {rowTeacher && <span>{rowTeacher}</span>}
                           {event.building && (
@@ -583,17 +637,18 @@ export function HomePage() {
                   >
                     <div
                       className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center"
-                      style={
-                        {
-                          background: `color-mix(in srgb, ${link.accent} 14%, transparent)`,
-                          color: link.accent,
-                        } as CSSProperties
-                      }
+                      style={{
+                        background: `color-mix(in srgb, ${link.accent} 14%, transparent)`,
+                        color: link.accent,
+                      }}
                     >
                       <Icon size={16} />
                     </div>
                     <div>
-                      <p className="text-[13.5px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                      <p
+                        className="text-[13.5px]"
+                        style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                      >
                         {link.label}
                       </p>
                       <p className="text-[11.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -616,7 +671,10 @@ export function HomePage() {
               </p>
             </div>
             {updates.length === 0 ? (
-              <p className="text-[13.5px] px-4 sm:px-5 pb-5" style={{ color: "var(--text-tertiary)" }}>
+              <p
+                className="text-[13.5px] px-4 sm:px-5 pb-5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Новых обновлений пока нет.
               </p>
             ) : (
@@ -629,7 +687,11 @@ export function HomePage() {
                         ? "var(--warning)"
                         : "var(--info)";
                   const typeLabel =
-                    update.type === "urgent" ? "Срочно" : update.type === "change" ? "Изменение" : "Инфо";
+                    update.type === "urgent"
+                      ? "Срочно"
+                      : update.type === "change"
+                        ? "Изменение"
+                        : "Инфо";
                   return (
                     <button
                       key={update.id}
@@ -756,17 +818,18 @@ export function HomePage() {
                     >
                       <div
                         className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                        style={
-                          {
-                            background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                            color: accent,
-                          } as CSSProperties
-                        }
+                        style={{
+                          background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                          color: accent,
+                        }}
                       >
                         {icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] leading-snug" style={{ color: "var(--text-primary)" }}>
+                        <p
+                          className="text-[14px] leading-snug"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {update.text}
                         </p>
                         <p className="text-[12px] mt-1.5" style={{ color: "var(--text-tertiary)" }}>

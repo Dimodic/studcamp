@@ -14,7 +14,6 @@ from ._helpers import (
     get_or_404,
 )
 
-
 router = APIRouter(prefix="/admin/resources", tags=["admin"])
 
 

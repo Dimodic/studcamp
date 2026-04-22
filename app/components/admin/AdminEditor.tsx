@@ -16,16 +16,31 @@ import type {
   Story,
 } from "../../lib/domain";
 import { PrimaryButton, SecondaryButton } from "../common";
-import { buildStoryInitial, serializeStory, StoryForm, type StoryFormState } from "./forms/StoryForm";
+import {
+  buildStoryInitial,
+  serializeStory,
+  StoryForm,
+  type StoryFormState,
+} from "./forms/StoryForm";
 import {
   buildOrgUpdateInitial,
   OrgUpdateForm,
   serializeOrgUpdate,
   type OrgUpdateFormState,
 } from "./forms/OrgUpdateForm";
-import { buildEventInitial, EventForm, serializeEvent, type EventFormState } from "./forms/EventForm";
+import {
+  buildEventInitial,
+  EventForm,
+  serializeEvent,
+  type EventFormState,
+} from "./forms/EventForm";
 import { buildUserInitial, serializeUser, UserForm, type UserFormState } from "./forms/UserForm";
-import { buildProjectInitial, ProjectForm, serializeProject, type ProjectFormState } from "./forms/ProjectForm";
+import {
+  buildProjectInitial,
+  ProjectForm,
+  serializeProject,
+  type ProjectFormState,
+} from "./forms/ProjectForm";
 import {
   buildMaterialInitial,
   MaterialForm,
@@ -56,15 +71,9 @@ import {
   serializeDocument,
   type DocumentFormState,
 } from "./forms/DocumentForm";
-import {
-  buildCampInitial,
-  CampForm,
-  serializeCamp,
-  type CampFormState,
-} from "./forms/CampForm";
+import { buildCampInitial, CampForm, serializeCamp, type CampFormState } from "./forms/CampForm";
 import type { AdminEntityKind, AdminOption } from "./paths";
 import { editorTitle } from "./paths";
-
 
 type AdminEntity =
   | Story
@@ -246,7 +255,9 @@ export function AdminEditorModal({
 
         <div className="px-5 py-4 space-y-4">
           {kind === "story" && <StoryForm state={state as StoryFormState} onChange={setState} />}
-          {kind === "orgUpdate" && <OrgUpdateForm state={state as OrgUpdateFormState} onChange={setState} />}
+          {kind === "orgUpdate" && (
+            <OrgUpdateForm state={state as OrgUpdateFormState} onChange={setState} />
+          )}
           {kind === "event" && (
             <EventForm
               state={state as EventFormState}
@@ -255,13 +266,25 @@ export function AdminEditorModal({
               teacherOptions={teacherOptions}
             />
           )}
-          {kind === "user" && <UserForm state={state as UserFormState} onChange={setState} mode={mode} />}
-          {kind === "project" && <ProjectForm state={state as ProjectFormState} onChange={setState} />}
+          {kind === "user" && (
+            <UserForm state={state as UserFormState} onChange={setState} mode={mode} />
+          )}
+          {kind === "project" && (
+            <ProjectForm state={state as ProjectFormState} onChange={setState} />
+          )}
           {kind === "material" && (
-            <MaterialForm state={state as MaterialFormState} onChange={setState} eventOptions={eventOptions} />
+            <MaterialForm
+              state={state as MaterialFormState}
+              onChange={setState}
+              eventOptions={eventOptions}
+            />
           )}
           {kind === "resource" && (
-            <ResourceForm state={state as ResourceFormState} onChange={setState} eventOptions={eventOptions} />
+            <ResourceForm
+              state={state as ResourceFormState}
+              onChange={setState}
+              eventOptions={eventOptions}
+            />
           )}
           {kind === "campusCategory" && (
             <CampusCategoryForm state={state as CampusCategoryFormState} onChange={setState} />
@@ -274,7 +297,11 @@ export function AdminEditorModal({
             />
           )}
           {kind === "document" && (
-            <DocumentForm state={state as DocumentFormState} onChange={setState} userOptions={userOptions} />
+            <DocumentForm
+              state={state as DocumentFormState}
+              onChange={setState}
+              userOptions={userOptions}
+            />
           )}
           {kind === "camp" && <CampForm state={state as CampFormState} onChange={setState} />}
 

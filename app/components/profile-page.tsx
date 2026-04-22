@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Bell,
@@ -88,7 +88,10 @@ function ToggleRow({ icon: Icon, label, description, checked, onToggle }: Toggle
         <Icon size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-[14.5px] block" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+        <span
+          className="text-[14.5px] block"
+          style={{ color: "var(--text-primary)", fontWeight: 500 }}
+        >
           {label}
         </span>
         {description && (
@@ -127,7 +130,7 @@ export function ProfilePage() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login", { replace: true });
+    void navigate("/login", { replace: true });
   };
 
   const roleStyle = ROLE_STYLES[currentUser.role] ?? ROLE_STYLES.participant;
@@ -164,7 +167,10 @@ export function ProfilePage() {
                     {ROLE_LABELS[currentUser.role] ?? currentUser.role}
                   </span>
                   {currentUser.email && (
-                    <span className="text-[12.5px] truncate max-w-full" style={{ color: "var(--text-tertiary)" }}>
+                    <span
+                      className="text-[12.5px] truncate max-w-full"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       {currentUser.email}
                     </span>
                   )}
@@ -226,10 +232,16 @@ export function ProfilePage() {
               <Sparkles size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] uppercase tracking-wider mb-0.5" style={{ color: "var(--text-tertiary)", fontWeight: 600 }}>
+              <p
+                className="text-[11px] uppercase tracking-wider mb-0.5"
+                style={{ color: "var(--text-tertiary)", fontWeight: 600 }}
+              >
                 Студкемп
               </p>
-              <p className="text-[14.5px] leading-tight" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+              <p
+                className="text-[14.5px] leading-tight"
+                style={{ color: "var(--text-primary)", fontWeight: 600 }}
+              >
                 {camp.name}
               </p>
               <p
@@ -263,17 +275,18 @@ export function ProfilePage() {
               >
                 <div
                   className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                  style={
-                    {
-                      background: `color-mix(in srgb, ${link.accent} 14%, transparent)`,
-                      color: link.accent,
-                    } as CSSProperties
-                  }
+                  style={{
+                    background: `color-mix(in srgb, ${link.accent} 14%, transparent)`,
+                    color: link.accent,
+                  }}
                 >
                   <Icon size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px]" style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                  <p
+                    className="text-[15px]"
+                    style={{ color: "var(--text-primary)", fontWeight: 500 }}
+                  >
                     {link.label}
                   </p>
                   <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -302,11 +315,14 @@ export function ProfilePage() {
           <ToggleRow
             icon={Shield}
             label="Видимость профиля"
-            description={currentUser.visibility === "name_only" ? "Только ФИО" : "ФИО + контакты и вуз"}
+            description={
+              currentUser.visibility === "name_only" ? "Только ФИО" : "ФИО + контакты и вуз"
+            }
             checked={currentUser.visibility === "name_plus_fields"}
             onToggle={() =>
               void updateProfilePreferences({
-                visibilityMode: currentUser.visibility === "name_only" ? "name_plus_fields" : "name_only",
+                visibilityMode:
+                  currentUser.visibility === "name_only" ? "name_plus_fields" : "name_only",
               })
             }
           />
@@ -348,7 +364,10 @@ export function ProfilePage() {
                       className="w-full text-left rounded-[var(--radius-md)] px-4 py-3 border transition-colors hover:bg-[var(--bg-subtle)]"
                       style={{ borderColor: "var(--line-subtle)", background: "var(--bg-card)" }}
                     >
-                      <p className="text-[14.5px]" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                      <p
+                        className="text-[14.5px]"
+                        style={{ fontWeight: 500, color: "var(--text-primary)" }}
+                      >
                         {event.title}
                       </p>
                       <p className="text-[12.5px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -365,7 +384,12 @@ export function ProfilePage() {
         <button
           onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[var(--radius-md)] text-[15px] border transition-colors hover:bg-[var(--danger-soft)]"
-          style={{ color: "var(--danger)", borderColor: "var(--line-subtle)", background: "var(--bg-card)", fontWeight: 500 }}
+          style={{
+            color: "var(--danger)",
+            borderColor: "var(--line-subtle)",
+            background: "var(--bg-card)",
+            fontWeight: 500,
+          }}
         >
           <LogOut size={17} /> Выйти из аккаунта
         </button>
@@ -397,7 +421,11 @@ export function ProfilePage() {
               <button
                 onClick={() => void handleLogout()}
                 className="flex-1 py-3 rounded-[var(--radius-md)] text-[15px]"
-                style={{ background: "var(--danger)", color: "var(--text-inverted)", fontWeight: 500 }}
+                style={{
+                  background: "var(--danger)",
+                  color: "var(--text-inverted)",
+                  fontWeight: 500,
+                }}
               >
                 Выйти
               </button>

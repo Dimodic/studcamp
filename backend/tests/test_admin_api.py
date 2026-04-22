@@ -1,6 +1,18 @@
+from backend.app.models.entities import (
+    CampusCategory,
+    Document,
+    Event,
+    EventTeacher,
+    Material,
+    OrgUpdate,
+    Project,
+    Resource,
+    RoomAssignment,
+    Story,
+    User,
+    UserRole,
+)
 from sqlalchemy import select
-
-from backend.app.models.entities import CampusCategory, Document, Event, EventTeacher, Material, OrgUpdate, Project, Resource, RoomAssignment, Story, User, UserRole
 
 
 def _login_as_role(client, db_session, role: UserRole):
@@ -8,8 +20,8 @@ def _login_as_role(client, db_session, role: UserRole):
     assert user is not None
     assert user.email
     response = client.post(
-      "/api/v1/auth/login",
-      json={"email": user.email, "password": "studcamp123"},
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "studcamp123"},
     )
     assert response.status_code == 200
     payload = response.json()
@@ -17,11 +29,18 @@ def _login_as_role(client, db_session, role: UserRole):
 
 
 def test_seed_creates_role_logins_and_assignments(db_session):
-    organizer = db_session.scalar(select(User).where(User.role == UserRole.organizer).order_by(User.id.asc()))
-    teacher = db_session.scalar(select(User).where(User.role == UserRole.teacher).order_by(User.id.asc()))
+    organizer = db_session.scalar(
+        select(User).where(User.role == UserRole.organizer).order_by(User.id.asc())
+    )
+    teacher = db_session.scalar(
+        select(User).where(User.role == UserRole.teacher).order_by(User.id.asc())
+    )
     assert organizer is not None and organizer.email and organizer.password_hash
     assert teacher is not None and teacher.email and teacher.password_hash
-    assert db_session.scalar(select(EventTeacher).where(EventTeacher.teacher_id == teacher.id)) is not None
+    assert (
+        db_session.scalar(select(EventTeacher).where(EventTeacher.teacher_id == teacher.id))
+        is not None
+    )
 
 
 def test_bootstrap_exposes_admin_capabilities(client, db_session):
@@ -54,7 +73,9 @@ def test_bootstrap_exposes_admin_capabilities(client, db_session):
 
 def test_organizer_can_create_and_update_all_admin_entities(client, db_session):
     organizer, headers, _ = _login_as_role(client, db_session, UserRole.organizer)
-    teacher = db_session.scalar(select(User).where(User.role == UserRole.teacher).order_by(User.id.asc()))
+    teacher = db_session.scalar(
+        select(User).where(User.role == UserRole.teacher).order_by(User.id.asc())
+    )
     assert teacher is not None
 
     user_response = client.post(
@@ -85,7 +106,13 @@ def test_organizer_can_create_and_update_all_admin_entities(client, db_session):
             "title": "Admin Story",
             "type": "info",
             "image": "https://example.com/story.png",
-            "slides": [{"image": "https://example.com/slide.png", "text": "Slide text", "caption": "Slide caption"}],
+            "slides": [
+                {
+                    "image": "https://example.com/slide.png",
+                    "text": "Slide text",
+                    "caption": "Slide caption",
+                }
+            ],
         },
     )
     assert story_response.status_code == 200
@@ -212,144 +239,216 @@ def test_organizer_can_create_and_update_all_admin_entities(client, db_session):
     assert document_response.status_code == 200
     document_id = document_response.json()["id"]
 
-    assert client.patch(
-        f"/api/v1/admin/users/{created_user_id}",
-        headers=headers,
-        json={
-            "name": "Updated Participant",
-            "role": "participant",
-            "university": "HSE",
-            "city": "Saint Petersburg",
-            "telegram": "@updateduser",
-            "photo": "https://example.com/photo",
-            "visibility": "name_only",
-            "notificationsOn": False,
-            "isActive": True,
-            "showInPeople": False,
-            "email": "created-participant@studcamp.local",
-            "password": None,
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/stories/{story_id}",
-        headers=headers,
-        json={
-            "title": "Updated Story",
-            "type": "urgent",
-            "image": "https://example.com/story-2.png",
-            "slides": [{"image": "https://example.com/slide-2.png", "text": "Updated", "caption": None}],
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/org-updates/{update_id}",
-        headers=headers,
-        json={"text": "Updated admin update", "time": "13:00", "isNew": False, "type": "change"},
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/events/{event_id}",
-        headers=headers,
-        json={
-            "date": "2026-04-24",
-            "title": "Updated Admin Event",
-            "type": "Workshop",
-            "startAt": "14:00",
-            "endAt": "15:30",
-            "place": "Room 202",
-            "building": "HQ",
-            "address": "Saint Petersburg",
-            "status": "changed",
-            "description": "Updated description",
-            "materials": ["Проектор"],
-            "day": 12,
-            "teacherIds": [teacher.id],
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/projects/{project_id}",
-        headers=headers,
-        json={
-            "title": "Updated Admin Project",
-            "shortDescription": "Updated description",
-            "direction": "Hardware",
-            "minTeam": 3,
-            "maxTeam": 5,
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/materials/{material_id}",
-        headers=headers,
-        json={
-            "title": "Updated Material",
-            "type": "presentation",
-            "day": 12,
-            "eventId": event_id,
-            "topic": "Updated topic",
-            "fileSize": "2 MB",
-            "isNew": False,
-            "url": "https://example.com/material-2",
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/resources/{resource_id}",
-        headers=headers,
-        json={
-            "title": "Updated Resource",
-            "category": "projects",
-            "kind": "sheet",
-            "description": "Updated resource",
-            "url": "https://example.com/resource-2",
-            "day": 12,
-            "eventId": event_id,
-            "isNew": False,
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/campus-categories/{category_id}",
-        headers=headers,
-        json={
-            "icon": "wifi",
-            "title": "Updated Campus",
-            "items": [{"title": "Updated point", "detail": "Updated detail"}],
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/room-assignments/{created_user_id}",
-        headers=headers,
-        json={
-            "userId": created_user_id,
-            "number": "B-202",
-            "floor": 5,
-            "building": "New hostel",
-            "neighbors": ["Neighbor Three"],
-            "keyInfo": "Updated key info",
-            "rules": ["Updated rule"],
-        },
-    ).status_code == 200
-    assert client.patch(
-        f"/api/v1/admin/documents/{document_id}",
-        headers=headers,
-        json={
-            "userId": created_user_id,
-            "title": "Updated Document",
-            "description": "Updated document description",
-            "status": "done",
-            "deadline": "2 May",
-            "critical": False,
-            "fallback": "Updated fallback",
-        },
-    ).status_code == 200
+    assert (
+        client.patch(
+            f"/api/v1/admin/users/{created_user_id}",
+            headers=headers,
+            json={
+                "name": "Updated Participant",
+                "role": "participant",
+                "university": "HSE",
+                "city": "Saint Petersburg",
+                "telegram": "@updateduser",
+                "photo": "https://example.com/photo",
+                "visibility": "name_only",
+                "notificationsOn": False,
+                "isActive": True,
+                "showInPeople": False,
+                "email": "created-participant@studcamp.local",
+                "password": None,
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/stories/{story_id}",
+            headers=headers,
+            json={
+                "title": "Updated Story",
+                "type": "urgent",
+                "image": "https://example.com/story-2.png",
+                "slides": [
+                    {"image": "https://example.com/slide-2.png", "text": "Updated", "caption": None}
+                ],
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/org-updates/{update_id}",
+            headers=headers,
+            json={
+                "text": "Updated admin update",
+                "time": "13:00",
+                "isNew": False,
+                "type": "change",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/events/{event_id}",
+            headers=headers,
+            json={
+                "date": "2026-04-24",
+                "title": "Updated Admin Event",
+                "type": "Workshop",
+                "startAt": "14:00",
+                "endAt": "15:30",
+                "place": "Room 202",
+                "building": "HQ",
+                "address": "Saint Petersburg",
+                "status": "changed",
+                "description": "Updated description",
+                "materials": ["Проектор"],
+                "day": 12,
+                "teacherIds": [teacher.id],
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/projects/{project_id}",
+            headers=headers,
+            json={
+                "title": "Updated Admin Project",
+                "shortDescription": "Updated description",
+                "direction": "Hardware",
+                "minTeam": 3,
+                "maxTeam": 5,
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/materials/{material_id}",
+            headers=headers,
+            json={
+                "title": "Updated Material",
+                "type": "presentation",
+                "day": 12,
+                "eventId": event_id,
+                "topic": "Updated topic",
+                "fileSize": "2 MB",
+                "isNew": False,
+                "url": "https://example.com/material-2",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/resources/{resource_id}",
+            headers=headers,
+            json={
+                "title": "Updated Resource",
+                "category": "projects",
+                "kind": "sheet",
+                "description": "Updated resource",
+                "url": "https://example.com/resource-2",
+                "day": 12,
+                "eventId": event_id,
+                "isNew": False,
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/campus-categories/{category_id}",
+            headers=headers,
+            json={
+                "icon": "wifi",
+                "title": "Updated Campus",
+                "items": [{"title": "Updated point", "detail": "Updated detail"}],
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/room-assignments/{created_user_id}",
+            headers=headers,
+            json={
+                "userId": created_user_id,
+                "number": "B-202",
+                "floor": 5,
+                "building": "New hostel",
+                "neighbors": ["Neighbor Three"],
+                "keyInfo": "Updated key info",
+                "rules": ["Updated rule"],
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            f"/api/v1/admin/documents/{document_id}",
+            headers=headers,
+            json={
+                "userId": created_user_id,
+                "title": "Updated Document",
+                "description": "Updated document description",
+                "status": "done",
+                "deadline": "2 May",
+                "critical": False,
+                "fallback": "Updated fallback",
+            },
+        ).status_code
+        == 200
+    )
 
-    assert db_session.scalar(select(User).where(User.id == created_user_id)).name == "Updated Participant"
+    assert (
+        db_session.scalar(select(User).where(User.id == created_user_id)).name
+        == "Updated Participant"
+    )
     assert db_session.scalar(select(Story).where(Story.id == story_id)).title == "Updated Story"
-    assert db_session.scalar(select(OrgUpdate).where(OrgUpdate.id == update_id)).text == "Updated admin update"
-    assert db_session.scalar(select(Event).where(Event.id == event_id)).title == "Updated Admin Event"
-    assert db_session.scalar(select(Project).where(Project.id == project_id)).title == "Updated Admin Project"
-    assert db_session.scalar(select(Material).where(Material.id == material_id)).title == "Updated Material"
-    assert db_session.scalar(select(Resource).where(Resource.id == resource_id)).title == "Updated Resource"
-    assert db_session.scalar(select(CampusCategory).where(CampusCategory.id == category_id)).title == "Updated Campus"
-    assert db_session.scalar(select(RoomAssignment).where(RoomAssignment.user_id == created_user_id)).number == "B-202"
-    assert db_session.scalar(select(Document).where(Document.id == document_id)).title == "Updated Document"
-    assert db_session.scalar(select(EventTeacher).where(EventTeacher.event_id == event_id, EventTeacher.teacher_id == teacher.id)) is not None
+    assert (
+        db_session.scalar(select(OrgUpdate).where(OrgUpdate.id == update_id)).text
+        == "Updated admin update"
+    )
+    assert (
+        db_session.scalar(select(Event).where(Event.id == event_id)).title == "Updated Admin Event"
+    )
+    assert (
+        db_session.scalar(select(Project).where(Project.id == project_id)).title
+        == "Updated Admin Project"
+    )
+    assert (
+        db_session.scalar(select(Material).where(Material.id == material_id)).title
+        == "Updated Material"
+    )
+    assert (
+        db_session.scalar(select(Resource).where(Resource.id == resource_id)).title
+        == "Updated Resource"
+    )
+    assert (
+        db_session.scalar(select(CampusCategory).where(CampusCategory.id == category_id)).title
+        == "Updated Campus"
+    )
+    assert (
+        db_session.scalar(
+            select(RoomAssignment).where(RoomAssignment.user_id == created_user_id)
+        ).number
+        == "B-202"
+    )
+    assert (
+        db_session.scalar(select(Document).where(Document.id == document_id)).title
+        == "Updated Document"
+    )
+    assert (
+        db_session.scalar(
+            select(EventTeacher).where(
+                EventTeacher.event_id == event_id, EventTeacher.teacher_id == teacher.id
+            )
+        )
+        is not None
+    )
     assert organizer.id != created_user_id
 
 
@@ -358,7 +457,9 @@ def test_teacher_scope_is_limited_to_owned_event_assets(client, db_session):
     bootstrap = client.get("/api/v1/bootstrap", headers=headers).json()
     teacher_id = login_payload["user"]["id"]
     owned_event = next(event for event in bootstrap["events"] if teacher_id in event["teacherIds"])
-    foreign_event = next(event for event in bootstrap["events"] if teacher_id not in event["teacherIds"])
+    foreign_event = next(
+        event for event in bootstrap["events"] if teacher_id not in event["teacherIds"]
+    )
 
     own_event_response = client.patch(
         f"/api/v1/admin/events/{owned_event['id']}",
@@ -432,34 +533,53 @@ def test_teacher_scope_is_limited_to_owned_event_assets(client, db_session):
     )
     assert resource_response.status_code == 200
 
-    assert client.post(
-        "/api/v1/admin/resources",
-        headers=headers,
-        json={
-            "title": "Forbidden Resource",
-            "category": "study",
-            "kind": "doc",
-            "description": "No access",
-            "url": "https://example.com/forbidden-resource",
-            "day": foreign_event["day"],
-            "eventId": foreign_event["id"],
-            "isNew": False,
-        },
-    ).status_code == 403
+    assert (
+        client.post(
+            "/api/v1/admin/resources",
+            headers=headers,
+            json={
+                "title": "Forbidden Resource",
+                "category": "study",
+                "kind": "doc",
+                "description": "No access",
+                "url": "https://example.com/forbidden-resource",
+                "day": foreign_event["day"],
+                "eventId": foreign_event["id"],
+                "isNew": False,
+            },
+        ).status_code
+        == 403
+    )
 
-    assert client.post(
-        "/api/v1/admin/projects",
-        headers=headers,
-        json={
-            "title": "Forbidden Project",
-            "shortDescription": "Should fail",
-            "direction": "ML",
-            "minTeam": 2,
-            "maxTeam": 3,
-        },
-    ).status_code == 403
+    assert (
+        client.post(
+            "/api/v1/admin/projects",
+            headers=headers,
+            json={
+                "title": "Forbidden Project",
+                "shortDescription": "Should fail",
+                "direction": "ML",
+                "minTeam": 2,
+                "maxTeam": 3,
+            },
+        ).status_code
+        == 403
+    )
 
-    assert db_session.scalar(select(Event).where(Event.id == owned_event["id"])).description == "Teacher updated description"
-    assert db_session.scalar(select(Material).where(Material.id == material_response.json()["id"])).event_id == owned_event["id"]
-    assert db_session.scalar(select(Resource).where(Resource.id == resource_response.json()["id"])).event_id == owned_event["id"]
+    assert (
+        db_session.scalar(select(Event).where(Event.id == owned_event["id"])).description
+        == "Teacher updated description"
+    )
+    assert (
+        db_session.scalar(
+            select(Material).where(Material.id == material_response.json()["id"])
+        ).event_id
+        == owned_event["id"]
+    )
+    assert (
+        db_session.scalar(
+            select(Resource).where(Resource.id == resource_response.json()["id"])
+        ).event_id
+        == owned_event["id"]
+    )
     assert teacher.id == teacher_id

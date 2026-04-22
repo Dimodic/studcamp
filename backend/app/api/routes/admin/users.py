@@ -18,7 +18,6 @@ from ._helpers import (
     resolve_camp_id,
 )
 
-
 router = APIRouter(prefix="/admin/users", tags=["admin"])
 
 

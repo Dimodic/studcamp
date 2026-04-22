@@ -1,0 +1,13 @@
+node_modules
+dist
+android
+backend
+.omx
+.claude
+public/badge-bg.jpg
+screenshots
+scripts
+studcamp.db
+package-lock.json
+*.pdf
+*.apk
