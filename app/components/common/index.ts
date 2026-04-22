@@ -2,8 +2,6 @@ export { Avatar } from "./Avatar";
 export { RoleBadge, StatusBadge } from "./Badges";
 export { PrimaryButton, SecondaryButton } from "./Buttons";
 export { DeadlineBanner } from "./DeadlineBanner";
-export { DevMobileFrame } from "./DevMobileFrame";
-export { DevViewportToggle } from "./DevViewportToggle";
 export { EmptyState } from "./EmptyState";
 export { ImageWithFallback } from "./ImageWithFallback";
 export { InfoRow } from "./InfoRow";
