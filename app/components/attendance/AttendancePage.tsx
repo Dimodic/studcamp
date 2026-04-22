@@ -1,9 +1,9 @@
 /**
  * Страница посещаемости для организатора.
- *   1. LLM-панель сверху — распознать листок, применить в 1 клик.
- *   2. Таблица снизу — ручная правка, клик переключает статус ячейки.
+ *   - LLM-панель сверху: выбор занятия + загрузка фото + распознавание.
+ *   - Таблица снизу: ручная правка, клик переключает статус ячейки.
  * Матрица загружается при монтировании, оптимистично обновляется при
- * правке и LLM-применении. Доступ только у `canManageUsers` (organizer).
+ * правке и LLM-применении.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -25,6 +25,10 @@ export function AttendancePage() {
     [data],
   );
   const events = useMemo(() => (data ? data.events : []), [data]);
+  const countableEvents = useMemo(
+    () => events.filter((event) => event.countsForAttendance !== false),
+    [events],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,7 +61,6 @@ export function AttendancePage() {
     async (eventId: string, userId: string, nextStatus: CellStatus) => {
       const cellKey = `${eventId}:${userId}`;
       setSaving((prev) => new Set(prev).add(cellKey));
-      // Оптимистичное обновление.
       const prevCell = matrix.get(eventId)?.get(userId);
       setMatrix((prev) => {
         const next = new Map(prev);
@@ -73,7 +76,6 @@ export function AttendancePage() {
       try {
         await setAttendanceCell(eventId, userId, nextStatus === "not_checked" ? null : nextStatus);
       } catch (nextError) {
-        // Откат.
         setMatrix((prev) => {
           const next = new Map(prev);
           const eventMap = new Map(next.get(eventId) ?? []);
@@ -121,52 +123,50 @@ export function AttendancePage() {
     );
   }
 
-  const countableEvents = events.filter((event) => event.countsForAttendance !== false);
-
   return (
     <PageShell size="wide">
-      <div className="px-5 pt-5 pb-3">
+      <div className="px-5 pt-5 pb-4">
         <h1 className="text-[var(--text-primary)]">Посещаемость</h1>
         <p className="text-[13px] mt-1" style={{ color: "var(--text-tertiary)" }}>
-          Загрузи фото листка — LLM распознает подписи. Ошибки поправь в таблице ниже одним кликом.
+          {participants.length} участников · {countableEvents.length} занятий с отметкой
         </p>
       </div>
 
-      <div className="px-5 pb-5">
+      <div className="px-5 pb-6">
         <AttendanceLlmPanel events={countableEvents} onApplied={handleLlmApplied} />
       </div>
 
       <div className="px-5 pb-8">
-        <SurfaceCard className="p-4 sm:p-5">
-          {loading ? (
+        {loading ? (
+          <SurfaceCard className="p-6">
             <div
               className="flex items-center gap-2 text-[13px]"
               style={{ color: "var(--text-tertiary)" }}
             >
               <Loader2 size={14} className="animate-spin" /> Загружаю матрицу…
             </div>
-          ) : (
-            <>
-              {error && (
-                <p
-                  className="text-[13px] mb-3 p-2.5 rounded-[var(--radius-md)]"
-                  style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
-                >
-                  {error}
-                </p>
-              )}
-              <AttendanceTable
-                participants={participants}
-                events={events}
-                matrix={matrix}
-                onCellChange={(eventId, userId, nextStatus) =>
-                  void handleCellChange(eventId, userId, nextStatus)
-                }
-                saving={saving}
-              />
-            </>
-          )}
-        </SurfaceCard>
+          </SurfaceCard>
+        ) : (
+          <>
+            {error && (
+              <p
+                className="text-[13px] mb-3 p-2.5 rounded-[var(--radius-md)]"
+                style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
+              >
+                {error}
+              </p>
+            )}
+            <AttendanceTable
+              participants={participants}
+              events={events}
+              matrix={matrix}
+              onCellChange={(eventId, userId, nextStatus) =>
+                void handleCellChange(eventId, userId, nextStatus)
+              }
+              saving={saving}
+            />
+          </>
+        )}
       </div>
     </PageShell>
   );

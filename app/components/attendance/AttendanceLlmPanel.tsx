@@ -6,9 +6,10 @@
  * onApplied-колбек.
  */
 import { useMemo, useState, type ChangeEvent, type DragEvent } from "react";
-import { Check, ImagePlus, Loader2, Sparkles, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, X } from "lucide-react";
 
 import { SurfaceCard } from "../common";
+import { FieldLabel } from "../admin/form-primitives";
 import { useAppData } from "../../lib/app-data";
 import {
   DEFAULT_SETTINGS,
@@ -17,6 +18,12 @@ import {
   type LlmSettings,
 } from "../../lib/llm-settings";
 import type { Event as CampEvent } from "../../lib/domain";
+
+const INPUT_STYLE = {
+  borderColor: "var(--line-subtle)",
+  background: "var(--bg-input)",
+  color: "var(--text-primary)",
+} as const;
 
 interface Photo {
   name: string;
@@ -175,27 +182,14 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
   };
 
   return (
-    <SurfaceCard className="p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <Sparkles size={18} style={{ color: "var(--brand)" }} />
-        <h2 className="text-[16px]" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-          Распознать листок LLM
-        </h2>
-      </div>
-
+    <SurfaceCard className="p-5 sm:p-6 space-y-5">
       <div>
-        <label className="text-[12px] block mb-1" style={{ color: "var(--text-tertiary)" }}>
-          Занятие
-        </label>
+        <FieldLabel>Занятие</FieldLabel>
         <select
           value={eventId}
           onChange={(event) => setEventId(event.target.value)}
-          className="w-full rounded-[var(--radius-md)] border px-3 py-2 text-[14px] outline-none"
-          style={{
-            borderColor: "var(--line-subtle)",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-          }}
+          className="w-full border rounded-[var(--radius-md)] px-3 py-2.5 text-[14px] outline-none"
+          style={INPUT_STYLE}
         >
           {events.map((event) => (
             <option key={event.id} value={event.id}>
@@ -206,14 +200,7 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
       </div>
 
       <div>
-        <div className="flex items-baseline justify-between mb-1.5">
-          <label className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
-            Фото листков {photos.length > 0 && `· ${photos.length}`}
-          </label>
-          <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-            Можно прикрепить несколько — каждое фото страница листа
-          </span>
-        </div>
+        <FieldLabel>{`Фото листков${photos.length > 0 ? ` · ${photos.length}` : ""}`}</FieldLabel>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
           {photos.map((photo, index) => (
             <div
@@ -280,59 +267,57 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <input
-          type="url"
-          value={settings.baseUrl}
-          onChange={(event) => persistSettings({ ...settings, baseUrl: event.target.value })}
-          placeholder="Base URL (https://…)"
-          className="rounded-[var(--radius-sm)] border px-3 py-2 text-[13px] font-mono outline-none"
-          style={{
-            borderColor: "var(--line-subtle)",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-          }}
-        />
-        <input
-          type="text"
-          value={settings.model}
-          onChange={(event) => persistSettings({ ...settings, model: event.target.value })}
-          placeholder="Модель (с vision)"
-          className="rounded-[var(--radius-sm)] border px-3 py-2 text-[13px] outline-none"
-          style={{
-            borderColor: "var(--line-subtle)",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-          }}
-        />
-        <input
-          type="password"
-          value={settings.apiKey}
-          onChange={(event) => persistSettings({ ...settings, apiKey: event.target.value })}
-          placeholder="API-ключ"
-          className="rounded-[var(--radius-sm)] border px-3 py-2 text-[13px] outline-none"
-          style={{
-            borderColor: "var(--line-subtle)",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-          }}
-        />
-      </div>
+      <details className="group">
+        <summary
+          className="flex items-center gap-2 text-[12px] cursor-pointer select-none list-none"
+          style={{ color: "var(--text-tertiary)" }}
+        >
+          <span className="uppercase tracking-wider" style={{ fontWeight: 600 }}>
+            Настройки LLM
+          </span>
+          <span className="opacity-60 group-open:rotate-90 transition-transform">›</span>
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2.5">
+          <input
+            type="url"
+            value={settings.baseUrl}
+            onChange={(event) => persistSettings({ ...settings, baseUrl: event.target.value })}
+            placeholder="Base URL (https://…)"
+            className="border rounded-[var(--radius-md)] px-3 py-2 text-[13px] font-mono outline-none"
+            style={INPUT_STYLE}
+          />
+          <input
+            type="text"
+            value={settings.model}
+            onChange={(event) => persistSettings({ ...settings, model: event.target.value })}
+            placeholder="Модель (с vision)"
+            className="border rounded-[var(--radius-md)] px-3 py-2 text-[13px] outline-none"
+            style={INPUT_STYLE}
+          />
+          <input
+            type="password"
+            value={settings.apiKey}
+            onChange={(event) => persistSettings({ ...settings, apiKey: event.target.value })}
+            placeholder="API-ключ"
+            className="border rounded-[var(--radius-md)] px-3 py-2 text-[13px] outline-none"
+            style={INPUT_STYLE}
+          />
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => void runParse()}
           disabled={processing}
-          className="text-[14px] px-4 py-2 rounded-[var(--radius-md)] flex items-center gap-1.5"
+          className="inline-flex items-center gap-1.5 text-[14px] px-4 py-2.5 rounded-[var(--radius-md)] disabled:opacity-40 disabled:cursor-not-allowed"
           style={{
             background: "var(--brand)",
             color: "var(--brand-contrast)",
             fontWeight: 600,
-            opacity: processing ? 0.6 : 1,
           }}
         >
-          {processing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+          {processing && <Loader2 size={14} className="animate-spin" />}
           {processing ? "Разбираю…" : "Распознать"}
         </button>
         {matched.length > 0 && (
@@ -340,15 +325,14 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
             type="button"
             onClick={() => void apply()}
             disabled={saving || selected.size === 0}
-            className="text-[14px] px-4 py-2 rounded-[var(--radius-md)]"
+            className="inline-flex items-center gap-1.5 text-[14px] px-4 py-2.5 rounded-[var(--radius-md)] disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: "var(--success)",
               color: "var(--text-inverted)",
               fontWeight: 600,
-              opacity: saving || selected.size === 0 ? 0.5 : 1,
             }}
           >
-            {saving ? "Сохраняю…" : `Отметить (${selected.size})`}
+            {saving ? "Сохраняю…" : `Отметить ${selected.size}`}
           </button>
         )}
       </div>
