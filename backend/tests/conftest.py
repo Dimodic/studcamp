@@ -12,6 +12,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 
+# Тесты работают против богатого снимка «Алисы» (tests/fixtures/), а не
+# минимального production-сида. Это даёт стабильные предсказуемые имена
+# пользователей/событий/проектов, на которые они завязаны. Сам production
+# seed (backend/seeds/initial_data.json) можно свободно менять.
+_TEST_SEED_PATH = Path(__file__).resolve().parent / "fixtures" / "alisa_snapshot.json"
+
+
 @pytest.fixture()
 def db_session(tmp_path: Path) -> Generator[Session, None, None]:
     db_file = tmp_path / "studcamp-test.sqlite3"
@@ -21,7 +28,7 @@ def db_session(tmp_path: Path) -> Generator[Session, None, None]:
     )
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
-    seed_database(session)
+    seed_database(session, seed_path=_TEST_SEED_PATH)
     try:
         yield session
     finally:
