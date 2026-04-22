@@ -66,7 +66,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["vite.config.ts", "eslint.config.mjs", "postcss.config.mjs"],
+    files: ["vite.config.ts", "vitest.config.ts", "eslint.config.mjs", "postcss.config.mjs"],
     languageOptions: {
       globals: { ...globals.node },
       parserOptions: { project: null },
