@@ -7,9 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+
 import { api } from "./api";
 import { cacheStorage } from "./cache";
-import type { AdminResourcePath, BootstrapPayload, Event, VisibilityMode } from "./domain";
+import { type AdminActions, useAdminActions } from "./app-data-admin";
+import { normalizeBootstrap, touchBootstrap } from "./app-data-normalize";
+import type { BootstrapPayload, Event, VisibilityMode } from "./domain";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 type SyncStatus = "idle" | "syncing" | "fresh" | "stale" | "error";
@@ -19,7 +22,7 @@ interface ProfilePreferencesInput {
   notificationsOn?: boolean;
 }
 
-interface AppDataContextValue {
+interface AuthAndSyncValue {
   status: AuthStatus;
   syncStatus: SyncStatus;
   data: BootstrapPayload | null;
@@ -32,91 +35,11 @@ interface AppDataContextValue {
   saveProjectPriorities: (projectIds: string[]) => Promise<void>;
   updateProfilePreferences: (payload: ProfilePreferencesInput) => Promise<void>;
   checkInEvent: (eventId: string) => Promise<void>;
-  createAdminEntity: (resource: AdminResourcePath, payload: unknown) => Promise<string>;
-  updateAdminEntity: (
-    resource: AdminResourcePath,
-    entityId: string,
-    payload: unknown,
-  ) => Promise<void>;
-  deleteAdminEntity: (resource: AdminResourcePath, entityId: string) => Promise<void>;
-  parseLlmContent: (input: {
-    baseUrl: string;
-    model: string;
-    apiKey: string;
-    text: string;
-    attachments: Array<{ name: string; mimeType: string; base64: string }>;
-  }) => Promise<Array<{ kind: string; payload: Record<string, unknown> }>>;
-  parseAttendancePhoto: (input: {
-    baseUrl: string;
-    model: string;
-    apiKey: string;
-    eventId: string;
-    photos: Array<{ name: string; mimeType: string; base64: string }>;
-  }) => Promise<{
-    matched: Array<{ userId: string; name: string; signed: boolean }>;
-    unmatched: string[];
-  }>;
-  markAttendance: (eventId: string, userIds: string[]) => Promise<void>;
-  setEntityVisibility: (
-    resource: AdminResourcePath,
-    entityId: string,
-    hidden: boolean,
-  ) => Promise<void>;
-  setProjectPhase: (phase: string) => Promise<void>;
-  createProjectTeam: (
-    projectId: string,
-  ) => Promise<{ id: string; projectId: string; number: number }>;
-  deleteProjectTeam: (teamId: string) => Promise<void>;
-  setProjectAssignment: (userId: string, teamId: string | null) => Promise<void>;
-  autoDistributeAssignments: () => Promise<{ assigned: number; unassigned: string[] }>;
 }
+
+export type AppDataContextValue = AuthAndSyncValue & AdminActions;
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
-
-const DEFAULT_CAPABILITIES = {
-  canManageAll: false,
-  canCreateEvents: false,
-  canEditAllEvents: false,
-  canEditOwnEvents: false,
-  canManageUsers: false,
-  canManageStories: false,
-  canManageUpdates: false,
-  canManageProjects: false,
-  canManageMaterials: false,
-  canManageResources: false,
-  canManageCampus: false,
-  canManageDocuments: false,
-  canManageRooms: false,
-  canAssignTeachers: false,
-};
-
-function normalizeBootstrap(bootstrap: BootstrapPayload): BootstrapPayload {
-  return {
-    ...bootstrap,
-    currentUser: {
-      ...bootstrap.currentUser,
-      capabilities: {
-        ...DEFAULT_CAPABILITIES,
-        ...bootstrap.currentUser.capabilities,
-      },
-    },
-    events: bootstrap.events.map((event) => ({
-      ...event,
-      teacherIds: event.teacherIds ?? [],
-    })),
-    adminUsers: bootstrap.adminUsers ?? [],
-    adminDocuments: bootstrap.adminDocuments ?? [],
-    adminRoomAssignments: bootstrap.adminRoomAssignments ?? [],
-    projectTeams: bootstrap.projectTeams ?? [],
-  };
-}
-
-function touchBootstrap(bootstrap: BootstrapPayload): BootstrapPayload {
-  return normalizeBootstrap({
-    ...bootstrap,
-    lastSyncedAt: new Date().toISOString(),
-  });
-}
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
@@ -355,144 +278,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [data, persistBootstrap, refresh, requireToken],
   );
 
-  const createAdminEntity = useCallback(
-    async (resource: AdminResourcePath, payload: unknown): Promise<string> => {
-      const authToken = requireToken();
-      try {
-        const response = await api.createAdminEntity(authToken, resource, payload);
-        await refresh();
-        return response.id;
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось создать запись");
-        throw nextError;
-      }
-    },
-    [refresh, requireToken],
-  );
-
-  const updateAdminEntity = useCallback(
-    async (resource: AdminResourcePath, entityId: string, payload: unknown) => {
-      const authToken = requireToken();
-      try {
-        await api.updateAdminEntity(authToken, resource, entityId, payload);
-        await refresh();
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось обновить запись");
-        throw nextError;
-      }
-    },
-    [refresh, requireToken],
-  );
-
-  const deleteAdminEntity = useCallback(
-    async (resource: AdminResourcePath, entityId: string) => {
-      const authToken = requireToken();
-      try {
-        await api.deleteAdminEntity(authToken, resource, entityId);
-        await refresh();
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось удалить запись");
-        throw nextError;
-      }
-    },
-    [refresh, requireToken],
-  );
-
-  const parseLlmContent = useCallback(
-    async (input: {
-      baseUrl: string;
-      model: string;
-      apiKey: string;
-      text: string;
-      attachments: Array<{ name: string; mimeType: string; base64: string }>;
-    }) => {
-      const authToken = requireToken();
-      const response = await api.parseLlmContent(authToken, input);
-      return response.items;
-    },
-    [requireToken],
-  );
-
-  const parseAttendancePhoto = useCallback(
-    async (input: {
-      baseUrl: string;
-      model: string;
-      apiKey: string;
-      eventId: string;
-      photos: Array<{ name: string; mimeType: string; base64: string }>;
-    }) => {
-      const authToken = requireToken();
-      return await api.parseAttendancePhoto(authToken, input);
-    },
-    [requireToken],
-  );
-
-  const markAttendance = useCallback(
-    async (eventId: string, userIds: string[]) => {
-      const authToken = requireToken();
-      await api.markAttendance(authToken, eventId, userIds);
-      await refresh();
-    },
-    [refresh, requireToken],
-  );
-
-  const setEntityVisibility = useCallback(
-    async (resource: AdminResourcePath, entityId: string, hidden: boolean) => {
-      const authToken = requireToken();
-      try {
-        await api.setEntityVisibility(authToken, resource, entityId, hidden);
-        await refresh();
-      } catch (nextError) {
-        setError(nextError instanceof Error ? nextError.message : "Не удалось изменить видимость");
-        throw nextError;
-      }
-    },
-    [refresh, requireToken],
-  );
-
-  const setProjectPhase = useCallback(
-    async (phase: string) => {
-      const authToken = requireToken();
-      await api.setProjectPhase(authToken, phase);
-      await refresh();
-    },
-    [refresh, requireToken],
-  );
-
-  const createProjectTeam = useCallback(
-    async (projectId: string) => {
-      const authToken = requireToken();
-      const team = await api.createProjectTeam(authToken, projectId);
-      await refresh();
-      return team;
-    },
-    [refresh, requireToken],
-  );
-
-  const deleteProjectTeam = useCallback(
-    async (teamId: string) => {
-      const authToken = requireToken();
-      await api.deleteProjectTeam(authToken, teamId);
-      await refresh();
-    },
-    [refresh, requireToken],
-  );
-
-  const setProjectAssignment = useCallback(
-    async (userId: string, teamId: string | null) => {
-      const authToken = requireToken();
-      await api.setProjectAssignment(authToken, userId, teamId);
-      await refresh();
-    },
-    [refresh, requireToken],
-  );
-
-  const autoDistributeAssignments = useCallback(async () => {
-    const authToken = requireToken();
-    const response = await api.autoDistributeAssignments(authToken);
-    await refresh();
-    return response;
-  }, [refresh, requireToken]);
+  const adminActions = useAdminActions({ requireToken, refresh, setError });
 
   const value = useMemo<AppDataContextValue>(
     () => ({
@@ -508,43 +294,21 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       saveProjectPriorities,
       updateProfilePreferences,
       checkInEvent,
-      createAdminEntity,
-      updateAdminEntity,
-      deleteAdminEntity,
-      parseLlmContent,
-      parseAttendancePhoto,
-      markAttendance,
-      setEntityVisibility,
-      setProjectPhase,
-      createProjectTeam,
-      deleteProjectTeam,
-      setProjectAssignment,
-      autoDistributeAssignments,
+      ...adminActions,
     }),
     [
-      autoDistributeAssignments,
+      adminActions,
       checkInEvent,
-      createAdminEntity,
-      createProjectTeam,
       data,
-      deleteAdminEntity,
-      deleteProjectTeam,
       error,
       login,
       logout,
-      markAttendance,
       markStoryRead,
       markUpdatesRead,
-      parseAttendancePhoto,
-      parseLlmContent,
       refresh,
       saveProjectPriorities,
-      setEntityVisibility,
-      setProjectAssignment,
-      setProjectPhase,
       status,
       syncStatus,
-      updateAdminEntity,
       updateProfilePreferences,
     ],
   );
@@ -553,9 +317,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppData() {
-  const context = useContext(AppDataContext);
-  if (!context) {
-    throw new Error("useAppData must be used within AppDataProvider");
+  const ctx = useContext(AppDataContext);
+  if (!ctx) {
+    throw new Error("useAppData must be used inside <AppDataProvider>");
   }
-  return context;
+  return ctx;
 }
