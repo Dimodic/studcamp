@@ -8,6 +8,7 @@ RUN npm ci --no-audit --no-fund
 
 COPY tsconfig.json vite.config.ts eslint.config.mjs index.html ./
 COPY app ./app
+COPY public ./public
 
 # В docker-compose network запрос /api/v1/... обрабатывает nginx-прокси.
 ARG VITE_API_BASE_URL=/api/v1
