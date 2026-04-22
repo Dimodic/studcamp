@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-studcamp}
       POSTGRES_USER: ${POSTGRES_USER:-studcamp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studcamp}
-    ports:
-      - "5432:5432"
     volumes:
       - studcamp-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +13,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   api:
     build:
@@ -22,14 +21,12 @@ services:
       dockerfile: backend/Dockerfile
     container_name: studcamp-api
     environment:
-      STUDCAMP_ENV: docker
+      STUDCAMP_ENV: ${STUDCAMP_ENV:-production}
       STUDCAMP_DATABASE_URL: ${STUDCAMP_DATABASE_URL:-postgresql+psycopg://studcamp:studcamp@db:5432/studcamp}
-      STUDCAMP_CORS_ORIGINS: ${STUDCAMP_CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      STUDCAMP_CORS_ORIGINS: ${STUDCAMP_CORS_ORIGINS:-http://localhost:8080}
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
     command:
       - /bin/sh
       - -c
@@ -37,6 +34,21 @@ services:
         alembic -c backend/alembic.ini upgrade head &&
         python -m backend.app.seed_data &&
         gunicorn backend.app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Относительный путь — nginx проксирует /api/* на api:8000.
+        VITE_API_BASE_URL: /api/v1
+    container_name: studcamp-web
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
 
 volumes:
   studcamp-postgres:
