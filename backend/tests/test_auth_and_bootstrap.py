@@ -75,11 +75,11 @@ def test_mutations_are_persisted(client):
 
 
 def test_bootstrap_uses_moscow_timezone_for_event_statuses(client, monkeypatch):
-    from backend.app.services import bootstrap as bootstrap_service
+    from backend.app.services.bootstrap import helpers as bootstrap_helpers
 
     monkeypatch.setattr(
-        bootstrap_service,
-        "_now_local",
+        bootstrap_helpers,
+        "now_local",
         lambda: datetime(2026, 4, 19, 17, 30, tzinfo=ZoneInfo("Europe/Moscow")),
     )
 
