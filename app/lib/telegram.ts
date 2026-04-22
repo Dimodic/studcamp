@@ -45,3 +45,12 @@ export function signalTelegramReady(): void {
   webApp?.ready?.();
   webApp?.expand?.();
 }
+
+/**
+ * Закрыть WebApp. Вызывается вместо logout'а, когда приложение открыто
+ * внутри Telegram — там нельзя «перелогиниться» на другого Telegram-юзера,
+ * единственное осмысленное действие — закрыть окно.
+ */
+export function closeTelegramWebApp(): void {
+  getWebApp()?.close?.();
+}

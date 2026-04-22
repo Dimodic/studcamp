@@ -146,6 +146,40 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     await hydrateWithToken(token, data);
   }, [data, hydrateWithToken, token]);
 
+  // Автообновление данных. Организатор может поменять расписание/проекты/
+  // тексты в любой момент — хочется, чтобы у участников это «прилетало» без
+  // ручного F5. Три триггера:
+  //   * таймер 15 сек (для лениво открытого таба);
+  //   * возвращение фокуса на окно (пользователь переключился на Telegram);
+  //   * visibilitychange → visible (телефон разблокировали, вкладку увидели).
+  // Чтобы не долбить api при скрытом табе, пропускаем тики, когда
+  // document.hidden === true.
+  useEffect(() => {
+    if (status !== "authenticated" || !token) return;
+
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+      void refresh();
+    };
+
+    const interval = window.setInterval(tick, 15_000);
+    const onFocus = () => tick();
+    const onVisibility = () => {
+      if (!document.hidden) tick();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refresh, status, token]);
+
   const login = useCallback(
     async (email: string, password: string) => {
       setStatus("loading");

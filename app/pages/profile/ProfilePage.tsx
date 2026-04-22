@@ -19,6 +19,7 @@ import { MagicBlock } from "./MagicBlock";
 import { CampSwitcher } from "./CampSwitcher";
 import { useAppData } from "../../lib/app-data";
 import { ROLE_LABELS, ROLE_STYLES } from "../../lib/options";
+import { closeTelegramWebApp, isTelegramWebApp } from "../../lib/telegram";
 
 const QUICK_LINKS: Array<{
   icon: LucideIcon;
@@ -132,8 +133,17 @@ export function ProfilePage() {
   const canSwitchCamps = currentUser.capabilities.canManageUsers;
   const teacherEvents = events.filter((event) => event.teacherIds.includes(currentUser.id));
 
+  const insideTelegram = isTelegramWebApp();
+
   const handleLogout = async () => {
     await logout();
+    if (insideTelegram) {
+      // В Telegram WebApp перелогин невозможен (identity привязана к
+      // Telegram-аккаунту). Просто закрываем окно — при следующем открытии
+      // бот снова автоматически авторизует пользователя.
+      closeTelegramWebApp();
+      return;
+    }
     void navigate("/login", { replace: true });
   };
 
@@ -408,6 +418,7 @@ export function ProfilePage() {
         )}
 
         <button
+          type="button"
           onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[var(--radius-md)] text-[15px] border transition-colors hover:bg-[var(--danger-soft)]"
           style={{
@@ -417,7 +428,7 @@ export function ProfilePage() {
             fontWeight: 500,
           }}
         >
-          <LogOut size={17} /> Выйти из аккаунта
+          <LogOut size={17} /> {insideTelegram ? "Закрыть приложение" : "Выйти из аккаунта"}
         </button>
       </div>
 
@@ -432,12 +443,17 @@ export function ProfilePage() {
             style={{ background: "var(--bg-card)", boxShadow: "var(--shadow-floating)" }}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-[var(--text-primary)] text-center mb-2">Выйти из аккаунта?</h3>
+            <h3 className="text-[var(--text-primary)] text-center mb-2">
+              {insideTelegram ? "Закрыть приложение?" : "Выйти из аккаунта?"}
+            </h3>
             <p className="text-[14px] text-center mb-6" style={{ color: "var(--text-secondary)" }}>
-              Кэшированные данные останутся на устройстве до следующей синхронизации.
+              {insideTelegram
+                ? "При следующем открытии Telegram снова авторизует вас автоматически."
+                : "Кэшированные данные останутся на устройстве до следующей синхронизации."}
             </p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setShowLogoutConfirm(false)}
                 className="flex-1 py-3 rounded-[var(--radius-md)] text-[15px]"
                 style={{ background: "var(--bg-subtle)", color: "var(--text-primary)" }}
@@ -445,6 +461,7 @@ export function ProfilePage() {
                 Отмена
               </button>
               <button
+                type="button"
                 onClick={() => void handleLogout()}
                 className="flex-1 py-3 rounded-[var(--radius-md)] text-[15px]"
                 style={{
@@ -453,7 +470,7 @@ export function ProfilePage() {
                   fontWeight: 500,
                 }}
               >
-                Выйти
+                {insideTelegram ? "Закрыть" : "Выйти"}
               </button>
             </div>
           </div>
