@@ -1,15 +1,15 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/layout";
-import { HomePage } from "./components/home-page";
-import { SchedulePage } from "./components/schedule-page";
-import { PeoplePage } from "./components/people-page";
+import { HomePage } from "./components/home";
+import { SchedulePage } from "./components/schedule";
+import { PeoplePage } from "./components/people";
 import { ProjectsPage } from "./components/projects";
 import { ProfilePage } from "./components/profile-page";
 import { BadgePage } from "./components/badge-page";
 import { LoginPage } from "./components/login-page";
 import { DocumentsPage } from "./components/documents-page";
 import { CampusPage } from "./components/campus-page";
-import { MaterialsPage } from "./components/materials-page";
+import { MaterialsPage } from "./components/materials";
 import { RequireAuth } from "./components/auth-guard";
 
 function ProtectedLayout() {
