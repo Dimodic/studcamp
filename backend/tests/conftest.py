@@ -11,12 +11,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-
-# Тесты работают против богатого снимка «Алисы» (tests/fixtures/), а не
+# Тесты работают против синтетического mock-сида (tests/fixtures/), а не
 # минимального production-сида. Это даёт стабильные предсказуемые имена
 # пользователей/событий/проектов, на которые они завязаны. Сам production
-# seed (backend/seeds/initial_data.json) можно свободно менять.
-_TEST_SEED_PATH = Path(__file__).resolve().parent / "fixtures" / "alisa_snapshot.json"
+# seed (backend/seeds/initial_data.json) можно свободно менять, равно как и
+# регенерировать фикстуру через tests/fixtures/generate_mock.py.
+_TEST_SEED_PATH = Path(__file__).resolve().parent / "fixtures" / "mock_snapshot.json"
 
 
 @pytest.fixture()

@@ -1,45 +1,54 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+VIEWER_EMAIL = "test.viewer@camp.local"
+VIEWER_PASSWORD = "studcamp123"
+EXPECTED_CAMP_ID = "camp-mock-2026"
+EXPECTED_CAMP_START = "2026-04-13"
+
+
+def _login(client) -> tuple[str, dict]:
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": VIEWER_EMAIL, "password": VIEWER_PASSWORD},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    return payload["token"], payload
+
 
 def test_login_and_bootstrap_flow(client):
-    login_response = client.post(
-        "/api/v1/auth/login",
-        json={"email": "alexey.petrov@studcamp.local", "password": "studcamp123"},
-    )
-    assert login_response.status_code == 200
-    payload = login_response.json()
-    assert payload["token"]
-    assert payload["user"]["name"] == "Технический доступ"
+    token, login_payload = _login(client)
+    assert login_payload["user"]["email"] == VIEWER_EMAIL
+    assert login_payload["user"]["role"] == "participant"
 
     bootstrap_response = client.get(
         "/api/v1/bootstrap",
-        headers={"Authorization": f"Bearer {payload['token']}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert bootstrap_response.status_code == 200
     bootstrap = bootstrap_response.json()
-    assert bootstrap["camp"]["id"] == "camp-alisa-2026"
-    assert bootstrap["camp"]["dates"]["start"] == "2026-04-13"
-    assert any(project["title"] == "Инструктивный синтез" for project in bootstrap["projects"])
-    assert any(
-        resource["title"] == "Таблица приезда и отъезда" for resource in bootstrap["resources"]
-    )
-    assert any(
-        resource["url"] == "https://disk.yandex.ru/d/Qdl9OmGsu697FA"
-        for resource in bootstrap["resources"]
-    )
-    assert all(person["id"] != payload["user"]["id"] for person in bootstrap["people"])
+
+    assert bootstrap["camp"]["id"] == EXPECTED_CAMP_ID
+    assert bootstrap["camp"]["dates"]["start"] == EXPECTED_CAMP_START
+    # fixture-независимые проверки: непустые списки ключевых сущностей.
+    assert len(bootstrap["projects"]) > 0
+    assert len(bootstrap["resources"]) > 0
+    assert len(bootstrap["events"]) > 0
+    assert len(bootstrap["stories"]) > 0
+    # Сам viewer не должен появиться в списке people (show_in_people=False).
+    assert all(person["id"] != login_payload["user"]["id"] for person in bootstrap["people"])
 
 
 def test_mutations_are_persisted(client):
-    login_response = client.post(
-        "/api/v1/auth/login",
-        json={"email": "alexey.petrov@studcamp.local", "password": "studcamp123"},
-    )
-    token = login_response.json()["token"]
+    token, _ = _login(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     bootstrap_before = client.get("/api/v1/bootstrap", headers=headers).json()
+    assert bootstrap_before["stories"], "fixture должна содержать хотя бы одну сторис"
+    assert len(bootstrap_before["projects"]) >= 3, "fixture должна содержать ≥ 3 проектов"
+    assert len(bootstrap_before["orgUpdates"]) >= 2
+
     story_id = bootstrap_before["stories"][0]["id"]
     project_ids = [project["id"] for project in bootstrap_before["projects"][:3]]
     update_ids = [update["id"] for update in bootstrap_before["orgUpdates"][:2]]
@@ -75,6 +84,11 @@ def test_mutations_are_persisted(client):
 
 
 def test_bootstrap_uses_moscow_timezone_for_event_statuses(client, monkeypatch):
+    """Проверяем, что статусы событий считаются в МСК-таймзоне.
+
+    Подменяем «сейчас» на 2026-04-19 17:30 MSK — это 7-й день кемпа.
+    Все события прошедших дней (13-18 апреля) должны быть completed.
+    """
     from backend.app.services.bootstrap import helpers as bootstrap_helpers
 
     monkeypatch.setattr(
@@ -83,15 +97,16 @@ def test_bootstrap_uses_moscow_timezone_for_event_statuses(client, monkeypatch):
         lambda: datetime(2026, 4, 19, 17, 30, tzinfo=ZoneInfo("Europe/Moscow")),
     )
 
-    login_response = client.post(
-        "/api/v1/auth/login",
-        json={"email": "alexey.petrov@studcamp.local", "password": "studcamp123"},
-    )
-    token = login_response.json()["token"]
+    token, _ = _login(client)
     headers = {"Authorization": f"Bearer {token}"}
-
     bootstrap = client.get("/api/v1/bootstrap", headers=headers).json()
-    by_title = {event["title"]: event for event in bootstrap["events"]}
 
-    assert by_title["Работа над проектами в Яндексе"]["status"] == "completed"
-    assert by_title["Экскурсия в офис Яндекса"]["status"] == "completed"
+    past_events = [event for event in bootstrap["events"] if event["date"] < "2026-04-19"]
+    assert past_events, "fixture должна содержать события прошлых дней"
+    assert all(event["status"] == "completed" for event in past_events), (
+        "события до 2026-04-19 должны считаться completed при MSK-часах"
+    )
+
+    future_events = [event for event in bootstrap["events"] if event["date"] > "2026-04-19"]
+    assert future_events, "fixture должна содержать события будущих дней"
+    assert all(event["status"] == "upcoming" for event in future_events)
