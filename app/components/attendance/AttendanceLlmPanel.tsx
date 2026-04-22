@@ -5,8 +5,8 @@
  * Изменения сразу же отражаются в прилегающей AttendanceTable через
  * onApplied-колбек.
  */
-import { useMemo, useState, type ChangeEvent } from "react";
-import { Check, ImageIcon, Loader2, Paperclip, Sparkles, X } from "lucide-react";
+import { useMemo, useState, type ChangeEvent, type DragEvent } from "react";
+import { Check, ImagePlus, Loader2, Sparkles, X } from "lucide-react";
 
 import { SurfaceCard } from "../common";
 import { useAppData } from "../../lib/app-data";
@@ -63,16 +63,16 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [appliedMessage, setAppliedMessage] = useState("");
+  const [dragOver, setDragOver] = useState(false);
 
   const settingsReady = useMemo(
     () => Boolean(settings.baseUrl.trim() && settings.model.trim()),
     [settings],
   );
 
-  const handleFiles = async (event: ChangeEvent<HTMLInputElement>) => {
-    const list = Array.from(event.target.files ?? []);
+  const ingestFiles = async (files: File[]) => {
     const newPhotos: Photo[] = [];
-    for (const file of list) {
+    for (const file of files) {
       if (!file.type.startsWith("image/")) {
         setError(`${file.name} не похоже на картинку`);
         continue;
@@ -84,8 +84,20 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
       const base64 = await readAsBase64(file);
       newPhotos.push({ name: file.name, mimeType: file.type, base64, sizeBytes: file.size });
     }
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    if (newPhotos.length > 0) {
+      setPhotos((prev) => [...prev, ...newPhotos]);
+    }
+  };
+
+  const handleFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+    await ingestFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
+  };
+
+  const handleDrop = async (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    await ingestFiles(Array.from(event.dataTransfer.files));
   };
 
   const removePhoto = (index: number) => setPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -171,58 +183,102 @@ export function AttendanceLlmPanel({ events, defaultEventId, onApplied }: Props)
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
-        <div>
-          <label className="text-[12px] block mb-1" style={{ color: "var(--text-tertiary)" }}>
-            Занятие
-          </label>
-          <select
-            value={eventId}
-            onChange={(event) => setEventId(event.target.value)}
-            className="w-full rounded-[var(--radius-md)] border px-3 py-2 text-[14px] outline-none"
-            style={{
-              borderColor: "var(--line-subtle)",
-              background: "var(--bg-input)",
-              color: "var(--text-primary)",
-            }}
-          >
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.date} · {event.startAt} · {event.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <label
-          className="text-[13px] flex items-center gap-1.5 px-3 py-2 rounded-[var(--radius-md)] border cursor-pointer transition-colors hover:bg-[var(--bg-subtle)] h-[42px]"
-          style={{ borderColor: "var(--line-subtle)", color: "var(--text-secondary)" }}
-        >
-          <ImageIcon size={14} /> Добавить фото
-          <input type="file" multiple accept="image/*" onChange={handleFiles} className="hidden" />
+      <div>
+        <label className="text-[12px] block mb-1" style={{ color: "var(--text-tertiary)" }}>
+          Занятие
         </label>
+        <select
+          value={eventId}
+          onChange={(event) => setEventId(event.target.value)}
+          className="w-full rounded-[var(--radius-md)] border px-3 py-2 text-[14px] outline-none"
+          style={{
+            borderColor: "var(--line-subtle)",
+            background: "var(--bg-input)",
+            color: "var(--text-primary)",
+          }}
+        >
+          {events.map((event) => (
+            <option key={event.id} value={event.id}>
+              {event.date} · {event.startAt} · {event.title}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {photos.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+      <div>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <label className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+            Фото листков {photos.length > 0 && `· ${photos.length}`}
+          </label>
+          <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            Можно прикрепить несколько — каждое фото страница листа
+          </span>
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
           {photos.map((photo, index) => (
-            <span
+            <div
               key={`${photo.name}-${index}`}
-              className="inline-flex items-center gap-1 text-[12px] px-2 py-1 rounded-full"
-              style={{ background: "var(--bg-subtle)", color: "var(--text-secondary)" }}
+              className="relative aspect-[4/3] rounded-[var(--radius-md)] overflow-hidden border"
+              style={{ borderColor: "var(--line-subtle)", background: "var(--bg-subtle)" }}
             >
-              <Paperclip size={10} /> {photo.name}
+              <img
+                src={`data:${photo.mimeType};base64,${photo.base64}`}
+                alt={photo.name}
+                className="w-full h-full object-cover"
+              />
               <button
                 type="button"
                 onClick={() => removePhoto(index)}
-                className="ml-0.5 opacity-70 hover:opacity-100"
-                aria-label="Убрать фото"
+                aria-label={`Убрать ${photo.name}`}
+                title="Убрать"
+                className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
               >
-                <X size={11} />
+                <X size={12} />
               </button>
-            </span>
+              <div
+                className="absolute bottom-0 left-0 right-0 px-1.5 py-0.5 text-[10px] truncate"
+                style={{
+                  background: "linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0))",
+                  color: "white",
+                }}
+              >
+                {photo.name}
+              </div>
+            </div>
           ))}
+
+          <label
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(event) => void handleDrop(event)}
+            className="aspect-[4/3] rounded-[var(--radius-md)] border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-center px-2"
+            style={{
+              borderColor: dragOver ? "var(--brand)" : "var(--line-strong)",
+              background: dragOver ? "var(--brand-soft)" : "var(--bg-subtle)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <ImagePlus size={22} />
+            <span className="text-[12px]" style={{ fontWeight: 500 }}>
+              {photos.length === 0 ? "Загрузить фото" : "Ещё фото"}
+            </span>
+            <span className="text-[10.5px]" style={{ color: "var(--text-tertiary)" }}>
+              перетащите или кликните
+            </span>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFiles}
+              className="hidden"
+            />
+          </label>
         </div>
-      )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <input
