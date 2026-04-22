@@ -13,6 +13,7 @@ from ._helpers import (
     generate_id,
     get_or_404,
     parse_enum,
+    resolve_camp_id,
 )
 
 router = APIRouter(prefix="/admin/materials", tags=["admin"])
@@ -47,6 +48,7 @@ def create_material(
     _authorize(db, current_user, payload.eventId)
     material = Material(
         id=generate_id("material"),
+        camp_id=resolve_camp_id(db, current_user),
         title="",
         type=MaterialType.guide,
         is_new=False,

@@ -12,7 +12,7 @@ from backend.app.schemas.api import (
     SimpleStatusSchema,
 )
 
-from ._helpers import generate_id, get_or_404, require_organizer
+from ._helpers import generate_id, get_or_404, require_organizer, resolve_camp_id
 
 router = APIRouter(prefix="/admin/campus-categories", tags=["admin"])
 
@@ -30,7 +30,13 @@ def create_campus_category(
     db: Session = Depends(get_db),
 ) -> CreatedEntitySchema:
     require_organizer(current_user)
-    category = CampusCategory(id=generate_id("campus"), icon="", title="", items=[])
+    category = CampusCategory(
+        id=generate_id("campus"),
+        camp_id=resolve_camp_id(db, current_user),
+        icon="",
+        title="",
+        items=[],
+    )
     _apply(category, payload)
     db.add(category)
     db.commit()

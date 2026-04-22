@@ -45,6 +45,16 @@ def parse_enum[EnumType: Enum](
 
 
 def resolve_camp_id(db: Session, current_user: User) -> str:
+    """Кемп, в который создаётся новая сущность от имени current_user.
+
+    Для организатора — активный кемп (его "текущий рабочий контекст",
+    переключается через /admin/camps/{id}/activate). Для остальных — их
+    собственный camp_id. Fallback — первый кемп в БД.
+    """
+    if current_user.role == UserRole.organizer:
+        active = db.scalar(select(Camp).where(Camp.is_active.is_(True)))
+        if active is not None:
+            return active.id
     if current_user.camp_id:
         return current_user.camp_id
     camp = db.scalar(select(Camp).limit(1))

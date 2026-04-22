@@ -50,14 +50,19 @@ from .serializers import (
 
 
 def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
-    # Приоритет: глобально активный кемп > кемп пользователя > первый по id.
-    # Активация меняется через /admin/camps/{id}/activate, переключая всех
-    # участников и преподавателей на новый кемп сразу.
-    camp = (
-        db.scalar(select(Camp).where(Camp.is_active.is_(True)))
-        or user.camp
-        or db.scalar(select(Camp).limit(1))
-    )
+    # Организатор видит активный кемп (его «текущий рабочий контекст»).
+    # Участники и преподаватели видят тот кемп, к которому привязаны.
+    # Кемпы изолированы: содержимое (events, projects, stories, ...) не
+    # просачивается между ними.
+    is_organizer = user.role == UserRole.organizer
+    if is_organizer:
+        camp = (
+            db.scalar(select(Camp).where(Camp.is_active.is_(True)))
+            or user.camp
+            or db.scalar(select(Camp).limit(1))
+        )
+    else:
+        camp = user.camp or db.scalar(select(Camp).where(Camp.is_active.is_(True)))
     if camp is None:
         raise HTTPException(status_code=503, detail="Camp data is missing")
 
@@ -65,27 +70,45 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
     event_teachers = load_event_teachers(db)
 
     events = db.scalars(
-        select(Event).order_by(Event.event_date.asc(), Event.start_at.asc(), Event.id.asc())
+        select(Event)
+        .where(Event.camp_id == camp.id)
+        .order_by(Event.event_date.asc(), Event.start_at.asc(), Event.id.asc())
     ).all()
     people = db.scalars(
         select(User)
-        .where(User.is_active.is_(True), User.show_in_people.is_(True))
+        .where(
+            User.camp_id == camp.id,
+            User.is_active.is_(True),
+            User.show_in_people.is_(True),
+        )
         .order_by(User.role.asc(), User.name.asc())
     ).all()
-    projects = db.scalars(select(Project).order_by(Project.title.asc())).all()
-    stories = db.scalars(select(Story).order_by(Story.id.asc())).all()
-    updates = db.scalars(select(OrgUpdate).order_by(OrgUpdate.id.desc())).all()
+    projects = db.scalars(
+        select(Project).where(Project.camp_id == camp.id).order_by(Project.title.asc())
+    ).all()
+    stories = db.scalars(
+        select(Story).where(Story.camp_id == camp.id).order_by(Story.id.asc())
+    ).all()
+    updates = db.scalars(
+        select(OrgUpdate).where(OrgUpdate.camp_id == camp.id).order_by(OrgUpdate.id.desc())
+    ).all()
     documents = db.scalars(
         select(Document).where(Document.user_id == user.id).order_by(Document.id.asc())
     ).all()
-    campus_categories = db.scalars(select(CampusCategory).order_by(CampusCategory.id.asc())).all()
+    campus_categories = db.scalars(
+        select(CampusCategory)
+        .where(CampusCategory.camp_id == camp.id)
+        .order_by(CampusCategory.id.asc())
+    ).all()
     materials = db.scalars(
-        select(Material).order_by(
-            Material.day.is_(None).asc(), Material.day.asc(), Material.id.asc()
-        )
+        select(Material)
+        .where(Material.camp_id == camp.id)
+        .order_by(Material.day.is_(None).asc(), Material.day.asc(), Material.id.asc())
     ).all()
     resources = db.scalars(
-        select(Resource).order_by(
+        select(Resource)
+        .where(Resource.camp_id == camp.id)
+        .order_by(
             Resource.day.is_(None).asc(),
             Resource.day.asc(),
             Resource.category.asc(),
@@ -93,20 +116,29 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
         )
     ).all()
 
-    is_organizer = user.role == UserRole.organizer
     admin_users = (
-        db.scalars(select(User).order_by(User.role.asc(), User.name.asc())).all()
+        db.scalars(
+            select(User).where(User.camp_id == camp.id).order_by(User.role.asc(), User.name.asc())
+        ).all()
         if is_organizer
         else []
     )
     admin_documents = (
-        db.scalars(select(Document).order_by(Document.user_id.asc(), Document.id.asc())).all()
+        db.scalars(
+            select(Document)
+            .join(User, Document.user_id == User.id)
+            .where(User.camp_id == camp.id)
+            .order_by(Document.user_id.asc(), Document.id.asc())
+        ).all()
         if is_organizer
         else []
     )
     admin_room_assignments = (
         db.scalars(
-            select(RoomAssignment).order_by(RoomAssignment.user_id.asc(), RoomAssignment.id.asc())
+            select(RoomAssignment)
+            .join(User, RoomAssignment.user_id == User.id)
+            .where(User.camp_id == camp.id)
+            .order_by(RoomAssignment.user_id.asc(), RoomAssignment.id.asc())
         ).all()
         if is_organizer
         else []
@@ -123,12 +155,18 @@ def build_bootstrap(db: Session, user: User) -> BootstrapSchema:
         return [item for item in items if not getattr(item, "is_hidden", False)]
 
     teams = db.scalars(
-        select(ProjectTeam).order_by(ProjectTeam.project_id.asc(), ProjectTeam.number.asc())
+        select(ProjectTeam)
+        .join(Project, ProjectTeam.project_id == Project.id)
+        .where(Project.camp_id == camp.id)
+        .order_by(ProjectTeam.project_id.asc(), ProjectTeam.number.asc())
     ).all()
+    team_ids = {team.id for team in teams}
     team_members: dict[str, list[str]] = {team.id: [] for team in teams}
     assigned_team_id: str | None = None
     for row in db.scalars(select(ProjectAssignment)):
-        team_members.setdefault(row.team_id, []).append(row.user_id)
+        if row.team_id not in team_ids:
+            continue  # assignment принадлежит проекту другого кемпа
+        team_members[row.team_id].append(row.user_id)
         if row.user_id == user.id:
             assigned_team_id = row.team_id
 

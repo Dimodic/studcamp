@@ -8,7 +8,7 @@ from backend.app.db.session import get_db
 from backend.app.models.entities import OrgUpdate, UpdateType, User
 from backend.app.schemas.api import CreatedEntitySchema, OrgUpdateUpsertSchema, SimpleStatusSchema
 
-from ._helpers import generate_id, get_or_404, parse_enum, require_organizer
+from ._helpers import generate_id, get_or_404, parse_enum, require_organizer, resolve_camp_id
 
 router = APIRouter(prefix="/admin/org-updates", tags=["admin"])
 
@@ -28,7 +28,12 @@ def create_org_update(
 ) -> CreatedEntitySchema:
     require_organizer(current_user)
     update = OrgUpdate(
-        id=generate_id("update"), text="", time="", is_new=True, type=UpdateType.info
+        id=generate_id("update"),
+        camp_id=resolve_camp_id(db, current_user),
+        text="",
+        time="",
+        is_new=True,
+        type=UpdateType.info,
     )
     _apply(update, payload)
     db.add(update)

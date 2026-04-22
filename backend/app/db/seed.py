@@ -154,11 +154,12 @@ def _seed_events(db: Session, events: Iterable[dict[str, Any]]) -> None:
             db.add(EventTeacher(event_id=payload["id"], teacher_id=teacher_id))
 
 
-def _seed_projects(db: Session, projects: Iterable[dict[str, Any]]) -> None:
+def _seed_projects(db: Session, projects: Iterable[dict[str, Any]], camp_id: str) -> None:
     for payload in projects:
         db.add(
             Project(
                 id=payload["id"],
+                camp_id=camp_id,
                 title=payload["title"],
                 short_description=payload["short_description"],
                 description=payload.get("description"),
@@ -175,11 +176,12 @@ def _seed_projects(db: Session, projects: Iterable[dict[str, Any]]) -> None:
         )
 
 
-def _seed_stories(db: Session, stories: Iterable[dict[str, Any]]) -> None:
+def _seed_stories(db: Session, stories: Iterable[dict[str, Any]], camp_id: str) -> None:
     for payload in stories:
         db.add(
             Story(
                 id=payload["id"],
+                camp_id=camp_id,
                 title=payload["title"],
                 type=StoryType(payload["type"]),
                 image=payload["image"],
@@ -188,11 +190,12 @@ def _seed_stories(db: Session, stories: Iterable[dict[str, Any]]) -> None:
         )
 
 
-def _seed_org_updates(db: Session, updates: Iterable[dict[str, Any]]) -> None:
+def _seed_org_updates(db: Session, updates: Iterable[dict[str, Any]], camp_id: str) -> None:
     for payload in updates:
         db.add(
             OrgUpdate(
                 id=payload["id"],
+                camp_id=camp_id,
                 text=payload["text"],
                 time=payload["time"],
                 is_new=payload["is_new"],
@@ -218,12 +221,16 @@ def _seed_documents(db: Session, documents: Iterable[dict[str, Any]]) -> None:
 
 
 def _seed_campus(
-    db: Session, categories: Iterable[dict[str, Any]], room_assignments: Iterable[dict[str, Any]]
+    db: Session,
+    categories: Iterable[dict[str, Any]],
+    room_assignments: Iterable[dict[str, Any]],
+    camp_id: str,
 ) -> None:
     for payload in categories:
         db.add(
             CampusCategory(
                 id=payload["id"],
+                camp_id=camp_id,
                 icon=payload["icon"],
                 title=payload["title"],
                 items=payload["items"],
@@ -244,12 +251,16 @@ def _seed_campus(
 
 
 def _seed_content(
-    db: Session, materials: Iterable[dict[str, Any]], resources: Iterable[dict[str, Any]]
+    db: Session,
+    materials: Iterable[dict[str, Any]],
+    resources: Iterable[dict[str, Any]],
+    camp_id: str,
 ) -> None:
     for payload in materials:
         db.add(
             Material(
                 id=payload["id"],
+                camp_id=camp_id,
                 title=payload["title"],
                 type=MaterialType(payload["type"]),
                 day=payload.get("day"),
@@ -264,6 +275,7 @@ def _seed_content(
         db.add(
             Resource(
                 id=payload["id"],
+                camp_id=camp_id,
                 title=payload["title"],
                 category=payload["category"],
                 kind=payload["kind"],
@@ -349,15 +361,16 @@ def seed_database(db: Session, seed_path: Path | str | None = None) -> None:
     snapshot = _load_seed(path)
     default_password = snapshot.get("meta", {}).get("default_demo_password", "studcamp123")
 
+    camp_id = snapshot["camp"]["id"]
     _reset_tables(db)
     _seed_camp(db, snapshot["camp"])
-    _seed_users(db, snapshot["users"], snapshot["camp"]["id"], default_password)
+    _seed_users(db, snapshot["users"], camp_id, default_password)
     _seed_events(db, snapshot["events"])
-    _seed_projects(db, snapshot["projects"])
-    _seed_stories(db, snapshot["stories"])
-    _seed_org_updates(db, snapshot["org_updates"])
+    _seed_projects(db, snapshot["projects"], camp_id)
+    _seed_stories(db, snapshot["stories"], camp_id)
+    _seed_org_updates(db, snapshot["org_updates"], camp_id)
     _seed_documents(db, snapshot["documents"])
-    _seed_campus(db, snapshot["campus_categories"], snapshot["room_assignments"])
-    _seed_content(db, snapshot["materials"], snapshot["resources"])
+    _seed_campus(db, snapshot["campus_categories"], snapshot["room_assignments"], camp_id)
+    _seed_content(db, snapshot["materials"], snapshot["resources"], camp_id)
     _seed_user_state(db, snapshot)
     db.commit()

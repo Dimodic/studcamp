@@ -8,7 +8,7 @@ from backend.app.db.session import get_db
 from backend.app.models.entities import Project, User
 from backend.app.schemas.api import CreatedEntitySchema, ProjectUpsertSchema, SimpleStatusSchema
 
-from ._helpers import generate_id, get_or_404, require_organizer
+from ._helpers import generate_id, get_or_404, require_organizer, resolve_camp_id
 
 router = APIRouter(prefix="/admin/projects", tags=["admin"])
 
@@ -37,6 +37,7 @@ def create_project(
     require_organizer(current_user)
     project = Project(
         id=generate_id("project"),
+        camp_id=resolve_camp_id(db, current_user),
         title="",
         short_description="",
         direction="",

@@ -238,6 +238,9 @@ class Project(TimestampMixin, Base):
     __tablename__ = "projects"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     short_description: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -312,6 +315,9 @@ class Story(TimestampMixin, Base):
     __tablename__ = "stories"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[StoryType] = mapped_column(Enum(StoryType), nullable=False)
     image: Mapped[str] = mapped_column(Text, nullable=False)
@@ -342,6 +348,9 @@ class OrgUpdate(TimestampMixin, Base):
     __tablename__ = "org_updates"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     text: Mapped[str] = mapped_column(Text, nullable=False)
     time: Mapped[str] = mapped_column(String(32), nullable=False)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -387,6 +396,9 @@ class CampusCategory(TimestampMixin, Base):
     __tablename__ = "campus_categories"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     icon: Mapped[str] = mapped_column(String(64), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     items: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
@@ -414,6 +426,9 @@ class Material(TimestampMixin, Base):
     __tablename__ = "materials"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[MaterialType] = mapped_column(Enum(MaterialType), nullable=False)
     day: Mapped[int | None] = mapped_column(Integer)
@@ -431,6 +446,9 @@ class Resource(TimestampMixin, Base):
     __tablename__ = "resources"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    camp_id: Mapped[str] = mapped_column(
+        ForeignKey("camps.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     category: Mapped[str] = mapped_column(String(32), nullable=False)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)

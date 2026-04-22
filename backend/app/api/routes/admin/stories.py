@@ -8,7 +8,7 @@ from backend.app.db.session import get_db
 from backend.app.models.entities import Story, StoryType, User
 from backend.app.schemas.api import CreatedEntitySchema, SimpleStatusSchema, StoryUpsertSchema
 
-from ._helpers import generate_id, get_or_404, parse_enum, require_organizer
+from ._helpers import generate_id, get_or_404, parse_enum, require_organizer, resolve_camp_id
 
 router = APIRouter(prefix="/admin/stories", tags=["admin"])
 
@@ -27,7 +27,14 @@ def create_story(
     db: Session = Depends(get_db),
 ) -> CreatedEntitySchema:
     require_organizer(current_user)
-    story = Story(id=generate_id("story"), title="", type=StoryType.info, image="", slides=[])
+    story = Story(
+        id=generate_id("story"),
+        camp_id=resolve_camp_id(db, current_user),
+        title="",
+        type=StoryType.info,
+        image="",
+        slides=[],
+    )
     _apply(story, payload)
     db.add(story)
     db.commit()

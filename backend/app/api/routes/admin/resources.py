@@ -12,6 +12,7 @@ from ._helpers import (
     ensure_manageable_related_event_id,
     generate_id,
     get_or_404,
+    resolve_camp_id,
 )
 
 router = APIRouter(prefix="/admin/resources", tags=["admin"])
@@ -46,6 +47,7 @@ def create_resource(
     _authorize(db, current_user, payload.eventId)
     resource = Resource(
         id=generate_id("resource"),
+        camp_id=resolve_camp_id(db, current_user),
         title="",
         category="",
         kind="",
