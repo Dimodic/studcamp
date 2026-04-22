@@ -15,6 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user
+from backend.app.core.config import settings
+from backend.app.core.url_guard import ensure_public_url
 from backend.app.db.session import get_db
 from backend.app.models.entities import Event, EventCheckIn, User, UserRole
 
@@ -121,6 +123,16 @@ def parse_attendance_photo(
         raise HTTPException(status_code=400, detail="Прикрепи хотя бы одно фото")
     for photo in payload.photos:
         _ensure_photo(photo)
+    total_bytes = sum(len(photo.base64) for photo in payload.photos)
+    if total_bytes > settings.llm_max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Суммарный размер фото превышает лимит "
+                f"{settings.llm_max_upload_bytes // (1024 * 1024)} MB."
+            ),
+        )
+    ensure_public_url(payload.baseUrl, allow_private=not settings.is_production)
 
     event = get_or_404(db, Event, payload.eventId)
 
@@ -166,7 +178,7 @@ def parse_attendance_photo(
     }
     endpoint = payload.baseUrl.rstrip("/") + "/chat/completions"
     try:
-        with httpx.Client(timeout=180) as client:
+        with httpx.Client(timeout=settings.llm_timeout_seconds) as client:
             response = client.post(endpoint, headers=headers, json=body)
     except httpx.HTTPError as exc:
         raise HTTPException(

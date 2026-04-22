@@ -60,8 +60,22 @@ jobs:
         run: pytest --cov=app --cov-report=term-missing
 
   migrations:
-    name: Alembic upgrade head
+    name: Alembic upgrade head (Postgres)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: studcamp
+          POSTGRES_PASSWORD: studcamp
+          POSTGRES_DB: studcamp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,7 +84,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
       - run: python -m pip install --upgrade pip && python -m pip install -r backend/requirements.txt
-      - name: Alembic upgrade head (SQLite)
+      - name: Alembic upgrade head
         env:
-          STUDCAMP_DATABASE_URL: "sqlite:///./ci-alembic.db"
+          STUDCAMP_DATABASE_URL: "postgresql+psycopg://studcamp:studcamp@localhost:5432/studcamp"
         run: alembic -c backend/alembic.ini upgrade head

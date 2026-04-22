@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user
 from backend.app.core.config import settings
-from backend.app.core.security import create_session_token, verify_password
+from backend.app.core.security import (
+    create_session_token,
+    hash_password,
+    needs_rehash,
+    verify_password,
+)
 from backend.app.db.session import get_db
 from backend.app.models.entities import Session as UserSession
 from backend.app.models.entities import User
@@ -26,7 +31,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/login", response_model=LoginResponseSchema)
 def login(payload: LoginRequestSchema, db: Session = Depends(get_db)) -> LoginResponseSchema:
     user = db.scalar(select(User).where(User.email == payload.email, User.is_active.is_(True)))
-    if user is None or not user.password_hash or not user.password_salt:
+    if user is None or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный email или пароль"
         )
@@ -35,6 +40,11 @@ def login(payload: LoginRequestSchema, db: Session = Depends(get_db)) -> LoginRe
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный email или пароль"
         )
+
+    # Lazy-upgrade: перехэшируем легаси PBKDF2-паролей в bcrypt при первом логине.
+    if needs_rehash(user.password_salt, user.password_hash):
+        user.password_salt, user.password_hash = hash_password(payload.password)
+        db.add(user)
 
     expires_at = datetime.now(UTC) + timedelta(hours=settings.session_ttl_hours)
     session = UserSession(token=create_session_token(), user_id=user.id, expires_at=expires_at)

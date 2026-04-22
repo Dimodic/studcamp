@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user
+from backend.app.core.config import settings
+from backend.app.core.url_guard import ensure_public_url
 from backend.app.db.session import get_db
 from backend.app.models.entities import User, UserRole
 from backend.app.services.llm_prompt import SYSTEM_PROMPT
@@ -220,7 +222,7 @@ def _call_openai_compatible(
     }
     endpoint = f"{_normalize_base_url(base_url)}/chat/completions"
     try:
-        with httpx.Client(timeout=180) as client:
+        with httpx.Client(timeout=settings.llm_timeout_seconds) as client:
             response = client.post(endpoint, headers=headers, json=body)
     except httpx.HTTPError as exc:
         raise HTTPException(
@@ -248,6 +250,21 @@ def parse_content(
         raise HTTPException(status_code=400, detail="Не указан Base URL")
     if not payload.model.strip():
         raise HTTPException(status_code=400, detail="Не указана модель")
+
+    # SSRF-guard: разрешаем приватные адреса только в dev-окружении
+    # (организатор может подключить локальный Ollama / LM Studio).
+    ensure_public_url(payload.baseUrl, allow_private=not settings.is_production)
+
+    # Защита от DoS: суммарный base64-объём attachments.
+    total_bytes = sum(len(att.base64) for att in payload.attachments)
+    if total_bytes > settings.llm_max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Суммарный размер вложений превышает лимит "
+                f"{settings.llm_max_upload_bytes // (1024 * 1024)} MB."
+            ),
+        )
 
     content_parts = _build_content_parts(payload.text, payload.attachments)
     raw = _call_openai_compatible(
