@@ -33,6 +33,11 @@ android/local.properties
 .claude/
 .omx/
 
+# Локальные данные конкретной установки — приватный снимок кемпа и
+# фото менторов лежат на сервере отдельно и не попадают в репозиторий.
+/public/mentors/
+/docker-compose.override.yml
+
 # Sessions artifacts
 studcamp.db
 screenshots/
