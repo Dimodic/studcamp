@@ -3,6 +3,21 @@ import type { AdminResourcePath, BootstrapPayload, LoginResponse, VisibilityMode
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000/api/v1";
 
+/**
+ * Ошибка API с пристёгнутым HTTP-статусом. Вызывающему коду иногда нужно
+ * отличить 401 (протухшая сессия — можно тихо перелогиниться) от других
+ * ошибок (показать тост, отрефрешить, что-то ещё).
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 function formatApiErrorDetail(detail: unknown): string | null {
   if (detail == null) {
     return null;
@@ -71,7 +86,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       pickErrorField(body, "detail") ??
       pickErrorField(body, "message") ??
       pickErrorField(body, "error");
-    throw new Error(formatApiErrorDetail(detail) ?? "Не удалось выполнить запрос");
+    throw new ApiError(
+      formatApiErrorDetail(detail) ?? "Не удалось выполнить запрос",
+      response.status,
+    );
   }
 
   if (response.status === 204) {

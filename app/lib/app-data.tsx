@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { api } from "./api";
+import { ApiError, api } from "./api";
 import { cacheStorage } from "./cache";
 import { type AdminActions, useAdminActions } from "./app-data-admin";
 import { normalizeBootstrap, touchBootstrap } from "./app-data-normalize";
@@ -59,6 +59,37 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const tryTelegramRelogin = useCallback(
+    async (cachedBootstrap?: BootstrapPayload | null): Promise<boolean> => {
+      // Тихий перелогин в Telegram-контексте: если есть свежий initData,
+      // пробуем дернуть /auth/telegram и подменить токен. Возвращаем true,
+      // если получилось; вызывающий код после этого перезапустит hydrate.
+      const initData = getTelegramInitData();
+      if (!initData) return false;
+      try {
+        const response = await api.telegramLogin(initData);
+        await cacheStorage.setToken(response.token);
+        setToken(response.token);
+        const fresh = await api.getBootstrap(response.token);
+        await persistBootstrap(fresh);
+        setStatus("authenticated");
+        setSyncStatus("fresh");
+        setError(null);
+        return true;
+      } catch {
+        // Не вышло (не в группе, сервер недоступен, и т.д.) — оставляем
+        // решение за вызывающим кодом: он либо покажет кеш stale, либо
+        // выкинет юзера на /login.
+        if (cachedBootstrap) {
+          setStatus("authenticated");
+          setSyncStatus("stale");
+        }
+        return false;
+      }
+    },
+    [persistBootstrap],
+  );
+
   const hydrateWithToken = useCallback(
     async (authToken: string, cachedBootstrap?: BootstrapPayload | null) => {
       setSyncStatus("syncing");
@@ -69,6 +100,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         setSyncStatus("fresh");
         setError(null);
       } catch (nextError) {
+        // Специальный путь для 401: сессия протухла. В Telegram-контексте
+        // тихо перелогиниваемся по initData, чтобы юзер даже не заметил.
+        // Без этого фронт оставался бы в «stale» навсегда, продолжая
+        // показывать данные недельной давности.
+        if (nextError instanceof ApiError && nextError.status === 401) {
+          await cacheStorage.clearToken();
+          const reloggedIn = await tryTelegramRelogin(cachedBootstrap);
+          if (reloggedIn) return;
+          // Не в Telegram или не в группе — сбрасываем сессию совсем.
+          setToken(null);
+          setStatus("unauthenticated");
+          setSyncStatus("error");
+          setError("Сессия истекла, войдите снова");
+          return;
+        }
+
         const message =
           nextError instanceof Error ? nextError.message : "Не удалось синхронизировать данные";
         if (cachedBootstrap) {
@@ -85,7 +132,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         setError(message);
       }
     },
-    [persistBootstrap],
+    [persistBootstrap, tryTelegramRelogin],
   );
 
   const initialize = useCallback(async () => {
