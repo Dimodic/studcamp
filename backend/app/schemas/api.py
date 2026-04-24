@@ -339,6 +339,11 @@ class UserUpsertSchema(BaseModel):
     university: str | None = None
     city: str | None = None
     telegram: str | None = None
+    # Цифровой user.id из Telegram — используется авторизацией через WebApp,
+    # чтобы впервые открывший приложение из группы привязался к существующему
+    # User, а не создал дубликат. Организатор может заранее залить список
+    # участников вместе с их telegram_id через /admin/users.
+    telegramId: int | None = None
     photo: str | None = None
     visibility: str
     notificationsOn: bool = True

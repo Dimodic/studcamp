@@ -27,6 +27,7 @@ def _apply(user: User, payload: UserUpsertSchema) -> None:
     user.university = payload.university
     user.city = payload.city
     user.telegram = payload.telegram
+    user.telegram_id = payload.telegramId
     user.photo_url = payload.photo
     user.visibility_mode = parse_enum(VisibilityMode, payload.visibility, "visibility")
     user.notifications_enabled = payload.notificationsOn
