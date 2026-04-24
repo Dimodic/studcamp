@@ -112,6 +112,11 @@ export const api = {
       body: JSON.stringify({ initData }),
     });
   },
+  demoLogin() {
+    // Публичный демо-вход: бэк отдаст сессию заранее назначенного организатора.
+    // Если endpoint выключен — 404, и вызывающий код идёт на /login.
+    return request<LoginResponse>("/auth/demo", { method: "POST" });
+  },
   logout(token: string) {
     return request<{ ok: boolean }>("/auth/logout", {
       method: "POST",

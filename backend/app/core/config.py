@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     # initData с auth_date старше этого лимита считается протухшей.
     telegram_auth_max_age_seconds: int = 3600
 
+    # «Публичный демо-вход» — id пользователя (обычно организатора), от имени
+    # которого endpoint /auth/demo выдаёт сессию любому, кто его дёрнул. Нужен,
+    # чтобы в браузере по прямой ссылке сразу попадать в интерфейс организатора
+    # без email/password (для демонстраций, презентаций, порт-фолио).
+    # Пустая строка — demo выключен (endpoint отвечает 404).
+    demo_organizer_id: str = ""
+
     @property
     def cors_origins(self) -> tuple[str, ...]:
         return _split_csv(self.cors_origins_raw)

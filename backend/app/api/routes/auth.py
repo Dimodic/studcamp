@@ -141,6 +141,33 @@ def telegram_login(
     )
 
 
+@router.post("/demo", response_model=LoginResponseSchema)
+def demo_login(db: Session = Depends(get_db)) -> LoginResponseSchema:
+    """Публичный демо-вход без учёток — для презентационной ссылки.
+
+    Если в настройках указан `demo_organizer_id`, любой HTTP-запрос на этот
+    endpoint получает сессионный токен этого пользователя. Это сделано ровно
+    для кейса «открыть сайт без Telegram → сразу оказаться в интерфейсе
+    организатора»; все действия такого сеанса реально меняют данные в БД,
+    так что демо-юзер должен быть отдельным, а не «настоящим» админом
+    продовой инсталляции.
+
+    В выключенном состоянии (пустой `demo_organizer_id`) endpoint отвечает
+    404, как будто его нет — чтобы в продакшне без демо-юзера он не светился.
+    """
+    if not settings.demo_organizer_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+
+    user = db.get(User, settings.demo_organizer_id)
+    if user is None or not user.is_active or user.role != UserRole.organizer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+
+    session = _issue_session(db, user)
+    return LoginResponseSchema(
+        token=session.token, expiresAt=session.expires_at, user=_serialize_current_user(user)
+    )
+
+
 @router.get("/me", response_model=CurrentUserSchema)
 def me(current_user: User = Depends(get_current_user)) -> CurrentUserSchema:
     return _serialize_current_user(current_user)

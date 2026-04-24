@@ -138,3 +138,51 @@ class TestTelegramLoginEndpoint:
         same_count = db_session.scalar(select(User).where(User.telegram_id == 9001))
         assert same_count is not None
         assert same_count.id == stored.id
+
+
+class TestDemoLoginEndpoint:
+    """Тесты публичного демо-входа /auth/demo."""
+
+    def test_404_when_not_configured(self, client, monkeypatch) -> None:
+        from backend.app.core import config as config_module
+
+        monkeypatch.setattr(config_module.settings, "demo_organizer_id", "")
+        response = client.post("/api/v1/auth/demo")
+        assert response.status_code == 404
+
+    def test_404_when_user_missing(self, client, monkeypatch) -> None:
+        from backend.app.core import config as config_module
+
+        monkeypatch.setattr(config_module.settings, "demo_organizer_id", "no-such-user")
+        response = client.post("/api/v1/auth/demo")
+        assert response.status_code == 404
+
+    def test_404_when_user_is_not_organizer(self, client, db_session, monkeypatch) -> None:
+        # Назначим демо-id на teacher'а — endpoint должен отказать.
+        from backend.app.core import config as config_module
+        from backend.app.models.entities import UserRole
+
+        teacher = db_session.scalar(
+            select(User).where(User.role == UserRole.teacher).order_by(User.id.asc())
+        )
+        assert teacher is not None
+        monkeypatch.setattr(config_module.settings, "demo_organizer_id", teacher.id)
+        response = client.post("/api/v1/auth/demo")
+        assert response.status_code == 404
+
+    def test_issues_session_when_configured(self, client, db_session, monkeypatch) -> None:
+        from backend.app.core import config as config_module
+        from backend.app.models.entities import UserRole
+
+        organizer = db_session.scalar(
+            select(User).where(User.role == UserRole.organizer).order_by(User.id.asc())
+        )
+        assert organizer is not None
+        monkeypatch.setattr(config_module.settings, "demo_organizer_id", organizer.id)
+
+        response = client.post("/api/v1/auth/demo")
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["token"]
+        assert payload["user"]["role"] == "organizer"
+        assert payload["user"]["id"] == organizer.id

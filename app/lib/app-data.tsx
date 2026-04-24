@@ -177,6 +177,23 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Публичный демо-вход. В браузере без кеш-токена и без Telegram-контекста
+    // пробуем дёрнуть /auth/demo: если на сервере назначен демо-организатор,
+    // любой посетитель сразу попадает в интерфейс с полными правами. Это
+    // нужно для презентационной ссылки — открыл и уже внутри. Если endpoint
+    // выключен (пустой STUDCAMP_DEMO_ORGANIZER_ID), он отвечает 404, и мы
+    // молча падаем на обычный /login.
+    try {
+      const response = await api.demoLogin();
+      await cacheStorage.setToken(response.token);
+      setToken(response.token);
+      setStatus("authenticated");
+      await hydrateWithToken(response.token, cachedBootstrap);
+      return;
+    } catch {
+      // Demo выключен — это нормальный путь, просто идём дальше на логин.
+    }
+
     setStatus("unauthenticated");
     setSyncStatus("idle");
   }, [hydrateWithToken]);
