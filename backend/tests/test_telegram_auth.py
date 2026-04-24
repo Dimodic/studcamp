@@ -108,6 +108,61 @@ class TestTelegramLoginEndpoint:
         assert response.status_code == 403
         assert db_session.scalar(select(User).where(User.telegram_id == 7777)) is None
 
+    def test_whitelist_login_without_group_check(self, client, db_session, monkeypatch) -> None:
+        """Предзалитый пользователь входит без проверки группы — даже если
+        group_id не настроен (0) или бот не в группе.
+        """
+        from backend.app.core import config as config_module
+        from backend.app.services import telegram_membership
+
+        telegram_membership._clear_cache()
+        monkeypatch.setattr(config_module.settings, "telegram_bot_token", BOT_TOKEN)
+        monkeypatch.setattr(config_module.settings, "telegram_group_id", 0)
+
+        # Предзалитого пользователя создадим вручную с известным telegram_id.
+        from backend.app.models.entities import UserRole, VisibilityMode
+
+        existing = User(
+            id="pre-loaded-user",
+            name="Preloaded Participant",
+            role=UserRole.participant,
+            telegram_id=5555,
+            telegram="@preloaded",
+            visibility_mode=VisibilityMode.name_plus_fields,
+            notifications_enabled=True,
+            is_active=True,
+            show_in_people=True,
+        )
+        db_session.add(existing)
+        db_session.commit()
+
+        init = _sign_init_data({"id": 5555, "first_name": "Any"})
+        response = client.post("/api/v1/auth/telegram", json={"initData": init})
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["user"]["id"] == "pre-loaded-user"
+
+        # Дубликатов нет — тот же пользователь, не новая запись «tg-5555».
+        found = db_session.scalars(select(User).where(User.telegram_id == 5555)).all()
+        assert len(found) == 1
+        assert found[0].id == "pre-loaded-user"
+
+    def test_non_whitelisted_rejected_when_group_not_configured(
+        self, client, db_session, monkeypatch
+    ) -> None:
+        """Если юзера нет в БД и group_id = 0 — 403, а не авто-создание."""
+        from backend.app.core import config as config_module
+        from backend.app.services import telegram_membership
+
+        telegram_membership._clear_cache()
+        monkeypatch.setattr(config_module.settings, "telegram_bot_token", BOT_TOKEN)
+        monkeypatch.setattr(config_module.settings, "telegram_group_id", 0)
+
+        init = _sign_init_data({"id": 99999, "first_name": "Stranger"})
+        response = client.post("/api/v1/auth/telegram", json={"initData": init})
+        assert response.status_code == 403
+        assert db_session.scalar(select(User).where(User.telegram_id == 99999)) is None
+
     def test_upserts_and_returns_token(self, client, db_session, monkeypatch) -> None:
         from backend.app.api.routes import auth as auth_route
         from backend.app.core import config as config_module

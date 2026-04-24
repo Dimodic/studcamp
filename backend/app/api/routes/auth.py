@@ -71,15 +71,27 @@ def telegram_login(
 ) -> LoginResponseSchema:
     """Авторизация через Telegram WebApp.
 
-    Фронт получает window.Telegram.WebApp.initData и шлёт сюда.
-    Backend:
-      1. проверяет HMAC-подпись initData;
-      2. проверяет, что пользователь — участник настроенной Telegram-группы
-         (через Bot API getChatMember);
-      3. upsert'ит User по telegram_id (создаёт как participant в active camp);
-      4. выдаёт сессионный токен — дальше всё как у обычного логина.
+    Логика:
+      1. Верифицируем HMAC-подпись initData — это гарантирует, что фронт
+         действительно открыт из Telegram от имени указанного user.id, а
+         не подделан. Без валидного bot_token дальше не идём.
+      2. Определяем «кто пускается». Две стратегии:
+         а) Если юзер с таким telegram_id уже есть в БД (организатор
+            заранее импортировал список участников группы через
+            POST /admin/users с полем telegramId) — доверяем этой записи
+            как «разрешению войти». Bot API не дёргаем вообще.
+         б) Если нет — fallback к getChatMember на настроенной группе
+            (telegram_group_id). Нужен, когда бот в группе и мы хотим
+            пускать всех её участников автоматически, без ручного
+            импорта. Если group_id не задан (0) или бот не в группе
+            (getChatMember вернёт false) — отказ.
+      3. Выдаём сессионный токен.
+
+    Итог: если организатор предзалил whitelist через /admin/users,
+    авторизация работает **без бота в группе** — нужна только валидная
+    подпись initData + совпадение telegram_id с записью в БД.
     """
-    if not settings.telegram_bot_token or not settings.telegram_group_id:
+    if not settings.telegram_bot_token:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Telegram-авторизация не настроена на сервере",
@@ -97,19 +109,22 @@ def telegram_login(
             detail=f"Не удалось проверить подпись Telegram: {exc}",
         ) from exc
 
-    member = is_group_member(
-        tg_user.id,
-        bot_token=settings.telegram_bot_token,
-        chat_id=settings.telegram_group_id,
-    )
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Вы не в группе кемпа. Попросите организатора добавить вас.",
-        )
-
     user = db.scalar(select(User).where(User.telegram_id == tg_user.id))
+
     if user is None:
+        # Не в whitelist'е — проверим по группе, если она настроена.
+        if not settings.telegram_group_id or not is_group_member(
+            tg_user.id,
+            bot_token=settings.telegram_bot_token,
+            chat_id=settings.telegram_group_id,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Вы не в списке кемпа. Попросите организатора добавить вас.",
+            )
+
+        # Прошли проверку группы, но записи в БД нет — авто-создадим
+        # нового участника в активном кемпе.
         active_camp = db.scalar(select(Camp).where(Camp.is_active.is_(True)))
         display_name = (
             " ".join(filter(None, [tg_user.first_name, tg_user.last_name])).strip()
